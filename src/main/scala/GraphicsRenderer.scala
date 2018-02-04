@@ -1,5 +1,3 @@
-package main.scala
-
 import java.util.UUID
 import javafx.scene.SnapshotParameters
 import javafx.scene.canvas.{Canvas, GraphicsContext}
@@ -7,7 +5,7 @@ import javafx.scene.image.Image
 import javafx.scene.paint.{Color, Paint}
 import javafx.scene.text.{Font, FontWeight, Text, TextAlignment}
 
-import main.scala.GraphicsRenderer.logger
+import GraphicsRenderer.logger
 
 import scala.language.postfixOps
 
@@ -124,6 +122,9 @@ object GraphicsRenderer extends GraphicsHelpers {
     listOfFragments match {
       // Special case on lines without Furigana
       case List(oneItem) => oneItem._2
+      case List() =>
+        logger.error("A line was attempted to be split, but nothing appeared in the right side. Please pick a smaller font or add spaces to your file")
+        throw new MatchError()
       case first +: middle :+ last =>
         (first, last) match {
           case ((firstText, firstImg), (lastText, lastImg)) =>

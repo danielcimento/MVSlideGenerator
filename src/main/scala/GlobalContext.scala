@@ -1,5 +1,3 @@
-package main.scala
-
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.Logger
 

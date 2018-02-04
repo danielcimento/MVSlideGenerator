@@ -1,5 +1,3 @@
-package main.scala
-
 object TextProcessor {
   /**
     * This function takes in a string of Japanese text (with Kanji + reading pairs written as [Kanji|Reading]) and

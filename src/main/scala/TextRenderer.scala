@@ -1,4 +1,3 @@
-package main.scala
 import javafx.scene.image.Image
 
 object TextRenderer {
