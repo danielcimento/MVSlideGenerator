@@ -24,6 +24,10 @@ After doing so, the command can be run simply by typing:
 
 This tool will automatically parse an English lyric file and a Japanese lyric file, assuming each line corresponds to its translation line. It will then parse the readings for the Japanese text and format furigana over the Kanji.
 
+Then, for each line, it will create a black slide with the text formatted over it. Here is an example slide:
+
+![slide_example](https://i.imgur.com/XUOIEQg.png)
+
 In order to add furigana to text, just wrap any kanji like so `[Kanji|Reading]`
 
 For example, the example song's Japanese lyric file contained the line:
