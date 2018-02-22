@@ -9,6 +9,7 @@ An example of a lyric video made with this tool can be found here:
 
 (Note: Unfortunately, due to copyright reasons, this video is not available in Japan)
 
+Update (2/22/2018): It occurs to me that not only is this useful for creating furigana over text, but it also can be used to add guitar chords over the lyrics of a song. In this case, the "english file" should just be empty lines and the "japanese file" should be whichever lyrics you want with the chords in the furigana positions.
 
 ## Download and Installation
 
