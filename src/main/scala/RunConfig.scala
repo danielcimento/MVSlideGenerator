@@ -13,7 +13,8 @@ case class RunConfig(
   padding: Int,
   furiganaSpacing: Int,
   lineSpacing: Int,
-  typeface: String
+  typeface: String,
+  transparentStroked: Boolean
 )
 
 object RunConfig {
@@ -52,7 +53,8 @@ object RunConfig {
         coerceToInt(options.getOrElse('p, Defaults.horizontalPadding)),
         coerceToInt(options.getOrElse('F, Defaults.furiganaSpacing)),
         coerceToInt(options.getOrElse('l, Defaults.lineSpacing)),
-        options.getOrElse('f, Defaults.fontFamily).asInstanceOf[String]
+        options.getOrElse('f, Defaults.fontFamily).asInstanceOf[String],
+        options.getOrElse('t, Defaults.transparentStroked).asInstanceOf[Boolean]
       ) } catch {
         case nfe: NumberFormatException =>
           logger.error("An error occured while trying to convert an argument to an integer")
@@ -90,6 +92,8 @@ object RunConfig {
           gatherFlags(map ++ Map('F -> furiganaSpacing.toInt), tail)
         case "-l" :: lineSpacing :: tail =>
           gatherFlags(map ++ Map('l -> lineSpacing.toInt), tail)
+        case "-t" :: tail =>
+          gatherFlags(map ++ Map('t -> true), tail)
         case engTextFile :: jpTextFile :: opt2 :: tail if isSwitch(opt2) =>
           gatherFlags(map ++ Map('jpInfile -> jpTextFile, 'engInfile -> engTextFile), opt2 :: tail)
         case engTextFile :: jpTextFile :: Nil =>  gatherFlags(map ++ Map('jpInfile -> jpTextFile, 'engInfile -> engTextFile), Nil)
@@ -113,4 +117,5 @@ object Defaults {
   val jpFontRange: (Int, Int)  = (defaultConf.getInt("font.jp.min"), defaultConf.getInt("font.jp.max"))
   val lineSpacing: Int = defaultConf.getInt("spacing.eng")
   val furiganaSpacing: Int = defaultConf.getInt("spacing.furigana")
+  val transparentStroked: Boolean = false
 }

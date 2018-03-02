@@ -13,19 +13,28 @@ object GraphicsRenderer extends GraphicsHelpers {
   private val debug = GlobalContext.conf.getBoolean("debug")
 
   // determines whether an english sentence can fit entirely on one line or needs to be broken up
-  def canFitOnOneLine(
-    string: String,
-    fontMin: Int,
-    resolutionWidth: Int,
-    padding: Int,
-    fontFamily: String
-  ): Boolean = {
+  def canFitOnOneLine(line: String, fontSize: Int, width: Int, fontFamily: String): Boolean = {
+    getTextDimensions(line, Font.font(fontFamily, FontWeight.BOLD, fontSize))._1 <= width
+  }
 
-    val renderedText: Text = new Text(string)
-    renderedText.setFont(Font.font(fontFamily, FontWeight.BOLD, fontMin))
-    val effectiveWidth = resolutionWidth - padding * 2
-
-    renderedText.getLayoutBounds.getWidth <= effectiveWidth
+  private def findMaxSatisfyingPredicate[A](range: Seq[A], pred: A => Boolean): Option[A] = {
+    range match {
+      case List() => None
+      case List(el) => Some(el).filter(pred)
+      case _ =>
+        val listMid = range.length / 2
+        range.splitAt(listMid) match {
+          case (firstHalf, mid::secondHalf) =>
+            if(pred(mid)) {
+              findMaxSatisfyingPredicate(secondHalf, pred) match {
+                case None => Some(mid)
+                case success => success
+              }
+            } else {
+              findMaxSatisfyingPredicate(firstHalf, pred)
+            }
+        }
+    }
   }
 
   // Gets the largest font size within a certain range that can comfortably fit in the specified area
@@ -39,8 +48,6 @@ object GraphicsRenderer extends GraphicsHelpers {
     fontFamily: String,
     twoLines: Boolean = false
   ): Int = {
-    val font =
-
     if(twoLines) {
       val (firstLine, secondLine) = TextProcessor.cleaveSentence(line)
 
@@ -50,14 +57,11 @@ object GraphicsRenderer extends GraphicsHelpers {
     }
 
     val effectiveWidth = resolutionWidth - (padding * 2)
-    val eligibleFontSizes = (maxFontSize to minFontSize by -1).dropWhile { size =>
-      getTextWidth(line, Font.font(fontFamily, FontWeight.BOLD, size)) > effectiveWidth
-    } toList
-
-    eligibleFontSizes match {
-      case List() => 0
-      case head :: tail => head
+    val availableSpacePerCharacter = line.length match {
+      case 0 => effectiveWidth
+      case lngth => effectiveWidth / lngth
     }
+    findMaxSatisfyingPredicate[Int](Range(minFontSize, maxFontSize).toList, canFitOnOneLine(line, _, effectiveWidth, fontFamily)).getOrElse(0)
   }
 
   def renderFuriganaFragment(
@@ -65,7 +69,8 @@ object GraphicsRenderer extends GraphicsHelpers {
     fontSize: Int,
     spacing: Int,
     ppi: Int,
-    fontFamily: String
+    fontFamily: String,
+    transparentBolded: Boolean
   ): Image = {
 
     val bigFont = Font.font(fontFamily, FontWeight.BOLD, fontSize)
@@ -102,10 +107,10 @@ object GraphicsRenderer extends GraphicsHelpers {
 
         // The Kanji extend around 5 pixels from the base line of the font
         val baseYPosition = scaledFuriganaHeight + spacing + scaledBaseHeight - 6
-        writeTextToCanvas(txt, canvasForText.getWidth / 2, baseYPosition)(canvasForText, bigFont)
+        writeTextToCanvas(txt, canvasForText.getWidth / 2, baseYPosition, transparentBolded)(canvasForText, bigFont)
 
         val readingYPosition = scaledFuriganaHeight
-        writeTextToCanvas(reading, canvasForText.getWidth / 2, readingYPosition)(canvasForText, smallFont)
+        writeTextToCanvas(reading, canvasForText.getWidth / 2, readingYPosition, transparentBolded)(canvasForText, smallFont)
 
         val img = takePictureOfCanvas
         if(debug) {
@@ -123,7 +128,7 @@ object GraphicsRenderer extends GraphicsHelpers {
       // Special case on lines without Furigana
       case List(oneItem) => oneItem._2
       case List() =>
-        logger.error("A line was attempted to be split, but nothing appeared in the right side. Please pick a smaller font or add spaces to your file")
+        logger.error("It appears that your lines were too long to fit on one line, but another one of your lines didn't have any spaces to split along")
         throw new MatchError()
       case first +: middle :+ last =>
         (first, last) match {
@@ -186,7 +191,7 @@ object GraphicsRenderer extends GraphicsHelpers {
     takePictureOfCanvas
   }
 
-  def renderEnglishTextLine(topLine: String,  fontSize: Int, fontFamily: String, spacing: Int, bottomLine: Option[String] = None): Image = {
+  def renderEnglishTextLine(topLine: String,  fontSize: Int, fontFamily: String, spacing: Int, transparentBolded: Boolean, bottomLine: Option[String] = None): Image = {
     implicit val font: Font = Font.font(fontFamily, FontWeight.BOLD, fontSize)
     bottomLine match {
       case Some(botLine) =>
@@ -197,23 +202,27 @@ object GraphicsRenderer extends GraphicsHelpers {
         val canvasWidth = Math.max(topWidth, botWidth)
         implicit val canvas: Canvas = new Canvas(canvasWidth, canvasHeight)
 
-        writeTextToCanvas(topLine, canvasWidth / 2, topHeight * .85)
-        writeTextToCanvas(botLine, canvasWidth / 2, canvasHeight - (botHeight * .42))
+        writeTextToCanvas(topLine, canvasWidth / 2, topHeight * .85, transparentBolded)
+        writeTextToCanvas(botLine, canvasWidth / 2, canvasHeight - (botHeight * .42), transparentBolded)
         takePictureOfCanvas
       case None =>
         val (canvasWidth, canvasHeight) = getTextDimensions(topLine, font)
         implicit val canvas: Canvas = new Canvas(canvasWidth, canvasHeight)
 
-        writeTextToCanvas(topLine, canvasWidth / 2, canvasHeight * .75)
+        writeTextToCanvas(topLine, canvasWidth / 2, canvasHeight * .75, transparentBolded)
         takePictureOfCanvas
     }
   }
 
-  def paintText(topText: Image, bottomText: Image, xDimension: Int, yDimension: Int, ppi: Int): Image = {
+  def paintText(topText: Image, bottomText: Image, xDimension: Int, yDimension: Int, ppi: Int, transparentStroked: Boolean): Image = {
     implicit val canvas: Canvas = new Canvas(xDimension, yDimension)
     val gc = canvas.getGraphicsContext2D
 
-    gc.setFill(Color.BLACK)
+    if(transparentStroked) {
+      gc.setFill(Color.TRANSPARENT)
+    } else {
+      gc.setFill(Color.BLACK)
+    }
     gc.fillRect(0, 0, xDimension, yDimension)
 
     val thirdOfHeight = yDimension / 3
@@ -257,7 +266,7 @@ trait GraphicsHelpers {
   }
 
   def writeTextToCanvas(
-    text: String, xPos: Double, yPos: Double,
+    text: String, xPos: Double, yPos: Double, transparentBolded: Boolean,
     textAlign: TextAlignment = TextAlignment.CENTER, color: Color = Color.WHITE
   )(implicit canvas: Canvas, font: Font): Unit = {
     val gc = canvas.getGraphicsContext2D
@@ -265,7 +274,14 @@ trait GraphicsHelpers {
     gc.setFont(font)
     gc.setTextAlign(textAlign)
     gc.setFill(color)
+    if(transparentBolded) {
+      gc.setStroke(Color.BLACK)
+      gc.setLineWidth(2.0)
+    }
 
     gc.fillText(text, xPos, yPos)
+    if(transparentBolded) {
+      gc.strokeText(text, xPos, yPos)
+    }
   }
 }

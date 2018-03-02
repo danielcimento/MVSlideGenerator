@@ -4,13 +4,15 @@ object TextRenderer {
   private val logger = GlobalContext.logger
 
   def convertJapaneseLinesToImages(japaneseLines: List[String], rc: RunConfig): List[Image] = {
-    val getFontSize: String => Int = GraphicsRenderer.getFontSizeForLine(_, rc.ppi, rc.resolutionWidth, rc.padding, rc.jpMinFont, rc.jpMaxFont, rc.typeface)
+    def getFontSize: String => Int = { x =>
+       GraphicsRenderer.getFontSizeForLine(x, rc.ppi, rc.resolutionWidth, rc.padding, rc.jpMinFont, rc.jpMaxFont, rc.typeface)
+    }
 
     // We want to know what the largest Japanese font size we can use is, so we go through each line of text
     // (x._1 => line), and calculate what the font size for that line should be, within our given bounds
     // Then, we take the minimum font size, so that all our lines have the same font
     val rawJapaneseLines = japaneseLines.map(TextProcessor.partitionLinesAndReadings).map(_._1)
-    val largestFontSizes = rawJapaneseLines.map(getFontSize(_))
+    val largestFontSizes = rawJapaneseLines.map(getFontSize)
 
     val (jpFontSize, twoLines): (Int, Boolean) = if(largestFontSizes.contains(0)) {
       val minSize = rawJapaneseLines.map { sentence =>
@@ -26,7 +28,7 @@ object TextRenderer {
 
     logger.debug("Settled on font size %d".format(jpFontSize))
 
-    val furiganaRender: TextWithReading => Image = x => GraphicsRenderer.renderFuriganaFragment(x, jpFontSize, rc.furiganaSpacing, rc.ppi, rc.typeface)
+    val furiganaRender: TextWithReading => Image = x => GraphicsRenderer.renderFuriganaFragment(x, jpFontSize, rc.furiganaSpacing, rc.ppi, rc.typeface, rc.transparentStroked)
 
     if(twoLines) {
       japaneseLines.map { sentence =>
@@ -36,7 +38,13 @@ object TextRenderer {
         val images = partitions.map {
           case (_, readings) =>
             val furiganaFragments = readings.map(furiganaRender(_))
-            GraphicsRenderer.joinFuriganaFragments(readings.zip(furiganaFragments), jpFontSize, rc.typeface)
+            try{
+              GraphicsRenderer.joinFuriganaFragments(readings.zip(furiganaFragments), jpFontSize, rc.typeface)
+            } catch {
+              case e: MatchError =>
+                logger.error("All lines and required font sizes:\n%s".format(japaneseLines.zip(largestFontSizes).toString))
+                throw e
+            }
         }
         GraphicsRenderer.stackImagesWithSpacing(images, rc.lineSpacing)
       }
@@ -51,7 +59,7 @@ object TextRenderer {
       // sentence. We put together all the slices, taking into account overhang
       partitions.map {
         case (jpLine, textAndFurigana) =>
-          val furiganaFragments = textAndFurigana.map(GraphicsRenderer.renderFuriganaFragment(_, jpFontSize, rc.furiganaSpacing, rc.ppi, rc.typeface))
+          val furiganaFragments = textAndFurigana.map(GraphicsRenderer.renderFuriganaFragment(_, jpFontSize, rc.furiganaSpacing, rc.ppi, rc.typeface, rc.transparentStroked))
           GraphicsRenderer.joinFuriganaFragments(textAndFurigana.zip(furiganaFragments), jpFontSize, rc.typeface)
       }
     }
@@ -64,7 +72,7 @@ object TextRenderer {
     // two lines (due to spacing restriction), we calculate the largest possible font size when it is evenly divided
     // into two lines. Once we have each one calculated, we take the min, so that all can have the same size.
     val engFontSize: Int = englishLines.map { line =>
-        val needsTwoLines = !GraphicsRenderer.canFitOnOneLine(line, rc.engMinFont, rc.resolutionWidth, rc.padding, rc.typeface)
+        val needsTwoLines = !GraphicsRenderer.canFitOnOneLine(line, rc.engMinFont, rc.resolutionWidth - 2 * rc.padding, rc.typeface)
         val fontSize = GraphicsRenderer.getFontSizeForLine(line, rc.ppi, rc.resolutionWidth, rc.padding, rc.engMinFont, rc.engMaxFont, rc.typeface, needsTwoLines)
         logger.debug("Line (%s) requires font size of %d".format(line, fontSize) + (if(needsTwoLines) " to fit on two lines." else "."))
         fontSize
@@ -75,11 +83,11 @@ object TextRenderer {
     // Next, we create the English translation images. The way we do so is by cleaving our sentence (if our chosen font
     // size requires it) and rendering the top and bottom lines above each other.
     englishLines.map { engLine =>
-        val engImage: Image = if(GraphicsRenderer.canFitOnOneLine(engLine, engFontSize, rc.resolutionWidth, rc.padding, rc.typeface)) {
-          GraphicsRenderer.renderEnglishTextLine(engLine, engFontSize, rc.typeface, rc.lineSpacing)
+        val engImage: Image = if(GraphicsRenderer.canFitOnOneLine(engLine, engFontSize, rc.resolutionWidth - 2 * rc.padding, rc.typeface)) {
+          GraphicsRenderer.renderEnglishTextLine(engLine, engFontSize, rc.typeface, rc.lineSpacing, rc.transparentStroked)
         } else {
           val (topLine, botLine) = TextProcessor.cleaveSentence(engLine)
-          GraphicsRenderer.renderEnglishTextLine(topLine, engFontSize, rc.typeface, rc.padding, Some(botLine))
+          GraphicsRenderer.renderEnglishTextLine(topLine, engFontSize, rc.typeface, rc.lineSpacing, rc.transparentStroked, Some(botLine))
         }
         engImage
     }

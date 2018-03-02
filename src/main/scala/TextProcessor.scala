@@ -13,7 +13,7 @@ object TextProcessor {
         str.split('|') match {
           case Array(a, b) =>
             TextWithReading(a, b)
-          case _ => throw new AssertionError("String didn't contain exactly one |")
+          case _ => throw new AssertionError("This string didn't contain exactly one | character:\n" + str)
         }
       } else {
         TextWithReading(str, "")

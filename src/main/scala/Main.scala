@@ -34,7 +34,7 @@ object Main extends App {
       var imgsCreated = 1
       engJpImages.foreach {
         case (engImage, jpImage) =>
-          val jointImg = GraphicsRenderer.paintText(engImage, jpImage, rc.resolutionWidth, rc.resolutionHeight, rc.ppi)
+          val jointImg = GraphicsRenderer.paintText(engImage, jpImage, rc.resolutionWidth, rc.resolutionHeight, rc.ppi, rc.transparentStroked)
           FileProcessor.saveImageToFile(jointImg, "image%04d.png".format(imgsCreated))
           imgsCreated += 1
       }
