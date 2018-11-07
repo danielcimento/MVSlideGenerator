@@ -1,0 +1,3 @@
+run
+sbtVersion
+run eng_lyrics jp_lyrics -f Arial

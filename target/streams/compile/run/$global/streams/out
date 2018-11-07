@@ -1,0 +1,31 @@
+[info] Running Main 
+[debug] Waiting for threads to exit or System.exit to be called.
+[debug]   Classpath:
+[debug] 	C:\Users\daniel\Documents\Code\MVSlideGenerator\target\scala-2.12\classes
+[debug] 	C:\Users\daniel\.ivy2\cache\org.scala-lang\scala-library\jars\scala-library-2.12.4.jar
+[debug] 	C:\Users\daniel\.ivy2\cache\com.typesafe\config\bundles\config-1.3.1.jar
+[debug] 	C:\Users\daniel\.ivy2\cache\ch.qos.logback\logback-classic\jars\logback-classic-1.2.3.jar
+[debug] 	C:\Users\daniel\.ivy2\cache\ch.qos.logback\logback-core\jars\logback-core-1.2.3.jar
+[debug] 	C:\Users\daniel\.ivy2\cache\org.slf4j\slf4j-api\jars\slf4j-api-1.7.25.jar
+[debug] 	C:\Users\daniel\.ivy2\cache\com.typesafe.scala-logging\scala-logging_2.12\bundles\scala-logging_2.12-3.7.2.jar
+[debug] 	C:\Users\daniel\.ivy2\cache\org.scala-lang\scala-reflect\jars\scala-reflect-2.12.4.jar
+[debug] Waiting for thread run-main-0 to terminate.
+[error] (run-main-0) java.lang.RuntimeException: Exception in Application start method
+java.lang.RuntimeException: Exception in Application start method
+	at com.sun.javafx.application.LauncherImpl.launchApplication1(LauncherImpl.java:917)
+	at com.sun.javafx.application.LauncherImpl.lambda$launchApplication$155(LauncherImpl.java:182)
+	at java.lang.Thread.run(Thread.java:745)
+Caused by: java.lang.IllegalArgumentException: The input files for the program were not specified!
+	at RunConfig$.gatherRuntimeConfiguration(RunConfig.scala:64)
+	at Main$MVSlideGenerator.start(Main.scala:17)
+	at com.sun.javafx.application.LauncherImpl.lambda$launchApplication1$162(LauncherImpl.java:863)
+	at com.sun.javafx.application.PlatformImpl.lambda$runAndWait$175(PlatformImpl.java:326)
+	at com.sun.javafx.application.PlatformImpl.lambda$null$173(PlatformImpl.java:295)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at com.sun.javafx.application.PlatformImpl.lambda$runLater$174(PlatformImpl.java:294)
+	at com.sun.glass.ui.InvokeLaterDispatcher$Future.run(InvokeLaterDispatcher.java:95)
+	at com.sun.glass.ui.win.WinApplication._runLoop(Native Method)
+	at com.sun.glass.ui.win.WinApplication.lambda$null$148(WinApplication.java:191)
+	at java.lang.Thread.run(Thread.java:745)
+[debug] 	Thread run-main-0 exited.
+[debug] Waiting for thread JavaFX Application Thread to terminate.
