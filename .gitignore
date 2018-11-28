@@ -1,1 +1,5 @@
 *.class
+output_files/
+project/
+target/
+.idea/
