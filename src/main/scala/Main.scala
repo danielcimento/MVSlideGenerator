@@ -1,9 +1,17 @@
 import javafx.application.Application
+import javafx.scene.control.Button
+import javafx.scene.{Group, Scene}
 import javafx.scene.image.Image
+import javafx.scene.layout.GridPane
 import javafx.stage.Stage
+import ui.{ApplicationScene, FileDisplayPane}
+import java.awt.GraphicsDevice
+import java.awt.GraphicsEnvironment
 
 import scala.collection.JavaConverters._
 import scala.reflect.internal.util.ScalaClassLoader.URLClassLoader
+
+import model.RunConfig.Keys._
 
 object Main extends App {
   override def main(args: Array[String]): Unit = {
@@ -13,33 +21,24 @@ object Main extends App {
   class MVSlideGenerator extends Application {
     // We use JavaFX application procedures, since we need to initialize the graphics context
     override def start(primaryStage: Stage): Unit = {
-      val logger = GlobalContext.logger
-      val rc = RunConfig.gatherRuntimeConfiguration(getParameters.getRaw.asScala.toList)
-      logger.debug(rc.toString)
-      if(GlobalContext.conf.getBoolean("test.only.argv")) {
-        System.exit(0)
-      }
+      implicit val mainStage = primaryStage
+      val rc = model.RunConfig.getUserConfig()
 
-      val (engFilename, jpFilename) = (rc.englishFilename, rc.japaneseFilename)
+      val appScene = new ApplicationScene(rc)
+      val defaultScene: Scene = new Scene(appScene, 1920, 1080)
+      primaryStage.setScene(defaultScene)
+      primaryStage.setTitle("MV Slide Generator")
+      primaryStage.setMaximized(true)
+      primaryStage.setResizable(true)
+      primaryStage.show()
 
-      // First, we open each file and get the lines
-      val (engLines, jpLines): (List[String], List[String]) = FileProcessor.getFileLines(engFilename, jpFilename)
+//      val logger = GlobalContext.logger
+////      logger.debug(rc.toString)
+//
+//      val (engFilename, jpFilename) = ("src/eng_lyrics", "src/jp_lyrics")
+//
 
-      val japaneseImages = TextRenderer.convertJapaneseLinesToImages(jpLines, rc)
-      val englishImages = TextRenderer.convertEnglishLinesToImages(engLines, rc)
-
-      val engJpImages = englishImages.zip(japaneseImages)
-
-      // Then, we take each English and Japanese image and paint them on top of a black canvas. Then we save the files sequentially
-      var imgsCreated = 1
-      engJpImages.foreach {
-        case (engImage, jpImage) =>
-          val jointImg = GraphicsRenderer.paintText(engImage, jpImage, rc.resolutionWidth, rc.resolutionHeight, rc.ppi, rc.transparentStroked)
-          FileProcessor.saveImageToFile(jointImg, "image%04d.png".format(imgsCreated))
-          imgsCreated += 1
-      }
-
-      System.exit(0)
+////      System.exit(0)
     }
   }
 }

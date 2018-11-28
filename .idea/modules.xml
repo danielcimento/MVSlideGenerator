@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/mvslidegenerator.iml" filepath="$PROJECT_DIR$/.idea/modules/mvslidegenerator.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/mvslidegenerator-build.iml" filepath="$PROJECT_DIR$/.idea/modules/mvslidegenerator-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/MVSlideGenerator.iml" filepath="$PROJECT_DIR$/.idea/modules/MVSlideGenerator.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/MVSlideGenerator-build.iml" filepath="$PROJECT_DIR$/.idea/modules/MVSlideGenerator-build.iml" />
     </modules>
   </component>
 </project>
