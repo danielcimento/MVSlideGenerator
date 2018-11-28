@@ -67,4 +67,9 @@ class ImageProcessingArea(parent: ApplicationScene)(implicit stage: Stage) exten
       outputPath.setText(chosenFile.getAbsolutePath)
     }
   }
+
+  def displayWarning(): Unit = {
+    emptySlidePreview.text.setText("Could not find corresponding lines in both files, so no preview can be rendered.")
+    getChildren.setAll(label, emptySlidePreview, outputPathGroup, createGroup)
+  }
 }

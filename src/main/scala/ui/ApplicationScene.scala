@@ -5,10 +5,8 @@ import javafx.scene.layout.{ColumnConstraints, GridPane, Priority, RowConstraint
 import javafx.stage.Stage
 import model.{GraphicsRenderer, RunConfig, TextProcessor, TextRenderer}
 
-class ApplicationScene(rc: RunConfig)(implicit stage: Stage) extends GridPane {
-  // TODO: Replace with encapsulated object from model
-  var englishFontSize = 0
-  var japaneseFontSize = 0
+class ApplicationScene(val rc: RunConfig)(implicit stage: Stage) extends GridPane {
+  var currentPreview = -1
 
   getColumnConstraints.addAll(
     new ColumnConstraints() {
@@ -22,8 +20,9 @@ class ApplicationScene(rc: RunConfig)(implicit stage: Stage) extends GridPane {
   getRowConstraints.add(new RowConstraints() {
     setPercentHeight(50)
   })
-  val englishFileArea = new FileDisplayPane("Top Text (English)", this)
-  val japaneseFileArea = new FileDisplayPane("Bottom Text (Japanese)", this)
+
+  val englishFileArea = new FileDisplayPane("Top Text (English)", this, true)
+  val japaneseFileArea = new FileDisplayPane("Bottom Text (Japanese)", this, false)
   add(englishFileArea, 0, 0)
   add(japaneseFileArea, 0, 1)
 
@@ -31,10 +30,21 @@ class ApplicationScene(rc: RunConfig)(implicit stage: Stage) extends GridPane {
   add(imageProcessingArea, 1, 0, 1, 2)
 
   def setPreviewImage(lineNumber: Int): Unit = {
-    val engLine = englishFileArea.getNthLine(lineNumber)
-    val jpLine = japaneseFileArea.getNthLine(lineNumber)
-    val previewImage = GraphicsRenderer.convertLinesToImage(engLine, jpLine, englishFontSize, japaneseFontSize, rc)
-    imageProcessingArea.updatePreviewImage(previewImage)
+    currentPreview = lineNumber
+    renderPreviewImage()
+  }
+
+  def renderPreviewImage(): Unit = {
+    if(currentPreview >= 0) {
+      val engLine = englishFileArea.getNthLine(currentPreview)
+      val jpLine = japaneseFileArea.getNthLine(currentPreview)
+      if(engLine.isEmpty || jpLine.isEmpty) {
+        imageProcessingArea.displayWarning()
+      } else {
+        val previewImage = GraphicsRenderer.convertLinesToImage(engLine, jpLine, englishFileArea.getFontSize(), japaneseFileArea.getFontSize(), rc)
+        imageProcessingArea.updatePreviewImage(previewImage)
+      }
+    }
   }
 
   def tryLinkingScrolls: Unit = {
@@ -44,12 +54,7 @@ class ApplicationScene(rc: RunConfig)(implicit stage: Stage) extends GridPane {
     }
   }
 
-  def recalculateFontSizes = {
-    japaneseFontSize = TextRenderer.getLargestFontSize(japaneseFileArea.getAllLines.map(TextProcessor.partitionLinesAndReadings(_)._1), rc)
-    englishFontSize = TextRenderer.getLargestFontSize(englishFileArea.getAllLines, rc, true)
-  }
-
   def createAllImages(outputPath: String) = {
-    GraphicsRenderer.createAllImages(japaneseFileArea.getAllLines, englishFileArea.getAllLines, japaneseFontSize, englishFontSize, outputPath, rc)
+    GraphicsRenderer.createAllImages(japaneseFileArea.getAllLines, englishFileArea.getAllLines, japaneseFileArea.getFontSize(), englishFileArea.getFontSize(), outputPath, rc)
   }
 }

@@ -7,11 +7,15 @@ object TextRenderer {
   private val logger = GlobalContext.logger
 
   def getLargestFontSize(lines: List[String], rc: RunConfig, considerSplitting: Boolean = false): Int = {
-    val availableScreenWidth = rc.getInt(RESOLUTION_WIDTH) - 2 * rc.getInt(HORIZONTAL_PADDING)
-    val twoLines = considerSplitting && lines.exists(!GraphicsRenderer.canFitOnOneLine(_, rc.getInt(MIN_FONT_BEFORE_CLEAVE), availableScreenWidth, rc.getString(FONT_FAMILY)))
+    if (lines.isEmpty) {
+      0
+    } else {
+      val availableScreenWidth = rc.getInt(RESOLUTION_WIDTH) - 2 * rc.getInt(HORIZONTAL_PADDING)
+      val twoLines = considerSplitting && lines.exists(!GraphicsRenderer.canFitOnOneLine(_, rc.getInt(MIN_FONT_BEFORE_CLEAVE), availableScreenWidth, rc.getString(FONT_FAMILY)))
 
-    def getFontSize: String => Int = GraphicsRenderer.getFontSizeForLine(_, rc.getInt(PPI), availableScreenWidth, rc.getString(FONT_FAMILY), twoLines)
-    lines.map(getFontSize).min
+      def getFontSize: String => Int = GraphicsRenderer.getFontSizeForLine(_, rc.getInt(PPI), availableScreenWidth, rc.getString(FONT_FAMILY), twoLines)
+      lines.map(getFontSize).min
+    }
   }
 
   def convertJapaneseLinesToImages(japaneseLines: List[String], rc: RunConfig): List[Image] = {

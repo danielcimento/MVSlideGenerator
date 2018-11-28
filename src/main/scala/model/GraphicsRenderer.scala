@@ -13,7 +13,7 @@ import RunConfig.Keys._
 import scala.language.postfixOps
 
 object GraphicsRenderer extends GraphicsHelpers {
-  private val debug = true
+  private val debug = false
 
   // determines whether an english sentence can fit entirely on one line or needs to be broken up
   def canFitOnOneLine(line: String, fontSize: Int, width: Int, fontFamily: String): Boolean = {
