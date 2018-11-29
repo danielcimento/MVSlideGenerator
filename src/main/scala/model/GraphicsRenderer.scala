@@ -9,6 +9,8 @@ import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.text.{Font, FontWeight, Text, TextAlignment}
 import RunConfig.Keys._
+import javafx.beans.property.DoubleProperty
+import javafx.scene.control.ProgressBar
 
 import scala.language.postfixOps
 
@@ -229,17 +231,11 @@ object GraphicsRenderer extends GraphicsHelpers {
     paintText(englishImage, japaneseImage, rc.getInt(RESOLUTION_WIDTH), rc.getInt(RESOLUTION_HEIGHT), rc.getInt(PPI), rc.getBool(TRANSPARENT_STROKED))
   }
 
-  def createAllImages(japaneseLines: List[String], englishLines: List[String], jpFontSize: Int, engFontSize: Int, outputPath: String, rc: RunConfig): Unit = {
+  def createAllImages(japaneseLines: List[String], englishLines: List[String], jpFontSize: Int, engFontSize: Int, rc: RunConfig): List[Image] = {
     val linePairs = englishLines.zip(japaneseLines)
-    val images = linePairs.map {
-      case (eL, jL) => convertLinesToImage(eL, jL, engFontSize, jpFontSize, rc)
-    }
-
-    images.zipWithIndex.foreach {
-      case (img, i) =>
-        FileProcessor.saveImageToFile(img, outputPath, f"image$i%04d.png")
-    }
+    linePairs.map { case (eL, jL) => convertLinesToImage(eL, jL, engFontSize, jpFontSize, rc) }
   }
+
 
 }
 

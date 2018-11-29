@@ -1,9 +1,14 @@
 package ui
 
+import javafx.application.Platform
+import javafx.beans.property.DoubleProperty
+import javafx.concurrent.Task
 import javafx.scene.Scene
+import javafx.scene.control.ProgressBar
+import javafx.scene.image.Image
 import javafx.scene.layout.{ColumnConstraints, GridPane, Priority, RowConstraints}
 import javafx.stage.Stage
-import model.{GraphicsRenderer, RunConfig, TextProcessor, TextRenderer}
+import model._
 
 class ApplicationScene(val rc: RunConfig)(implicit stage: Stage) extends GridPane {
   var currentPreview = -1
@@ -54,7 +59,24 @@ class ApplicationScene(val rc: RunConfig)(implicit stage: Stage) extends GridPan
     }
   }
 
-  def createAllImages(outputPath: String) = {
-    GraphicsRenderer.createAllImages(japaneseFileArea.getAllLines, englishFileArea.getAllLines, japaneseFileArea.getFontSize(), englishFileArea.getFontSize(), outputPath, rc)
+  def createAllImages(outputPath: String, outputListener: DoubleProperty) = {
+    val images = GraphicsRenderer.createAllImages(japaneseFileArea.getAllLines, englishFileArea.getAllLines, japaneseFileArea.getFontSize(), englishFileArea.getFontSize(), rc)
+    val saveImages = new Task[Unit]() {
+      override def call(): Unit = {
+        val total = images.size
+        images.zipWithIndex.foreach {
+          case (img, i) =>
+            FileProcessor.saveImageToFile(img, outputPath, f"image$i%04d.png")
+            updateProgress(i, total)
+        }
+      }
+    }
+    outputListener.bind(saveImages.progressProperty)
+    saveImages.setOnSucceeded(_ => imageProcessingArea.finishUpdatingImages())
+    new Thread(saveImages).start()
+  }
+
+  def getImageLineCount: Int = {
+    List(japaneseFileArea.getAllLines.size, englishFileArea.getAllLines.size).max
   }
 }

@@ -1,7 +1,8 @@
 package ui
 
+import javafx.concurrent.Task
 import javafx.geometry.{Insets, Pos}
-import javafx.scene.control.{Button, Label, TextField}
+import javafx.scene.control.{Button, Label, ProgressBar, TextField}
 import javafx.scene.image.{Image, ImageView}
 import javafx.scene.layout.{HBox, Priority, StackPane, VBox}
 import javafx.scene.paint.{Color, Paint}
@@ -36,16 +37,35 @@ class ImageProcessingArea(parent: ApplicationScene)(implicit stage: Stage) exten
   val outputPathGroup = new HBox(10.0)
   outputPathGroup.getChildren.addAll(outputPathLabel, outputPath, outputPathSelect)
 
+  val progressStackpane = new StackPane()
+  val creatingProgress = new ProgressBar()
+  val progressLabel = new Label("Saving images...")
+  progressStackpane.getChildren.addAll(creatingProgress, progressLabel)
+  creatingProgress.setMaxWidth(Double.MaxValue)
+  progressStackpane.setVisible(false)
+  progressStackpane.setMaxHeight(Double.MaxValue)
+
   val createButton = new Button("Create Slides")
-  createButton.setOnAction(_ => {
-    parent.createAllImages(outputPath.getText)
-  })
 
   val createGroup = new HBox(10.0)
-  createGroup.getChildren.addAll(createButton)
+  createGroup.getChildren.addAll(progressStackpane, createButton)
   createGroup.setAlignment(Pos.BASELINE_RIGHT)
+  HBox.setHgrow(progressStackpane, Priority.ALWAYS)
+
+
+  createButton.setOnAction(_ => {
+    createButton.setDisable(true)
+    progressStackpane.setVisible(true)
+    parent.createAllImages(outputPath.getText, creatingProgress.progressProperty())
+  })
+
 
   getChildren.addAll(label, emptySlidePreview, outputPathGroup, createGroup)
+
+  def finishUpdatingImages(): Unit = {
+      progressStackpane.setVisible(false)
+      createButton.setDisable(false)
+  }
 
   def updatePreviewImage(img: Image): Unit = {
     val slidePreviewArea = new StackPane()
