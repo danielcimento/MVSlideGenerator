@@ -1,6 +1,6 @@
 package model
 
-import java.io.{File, FileInputStream, FileNotFoundException, InputStreamReader}
+import java.io._
 import java.util.Properties
 
 import fastparse.NoWhitespace._
@@ -46,25 +46,6 @@ case class RunConfig(properties: mutable.Map[String, String]) {
       }
     }
   }
-//
-//  def getIntTuple(setting: String): (Int, Int) = {
-//    def intTupleParse(s: String): Option[(Int, Int)] = {
-//      def number[_ : P]: P[Int] = P(CharIn("0-9").rep(1).!.map(_.toInt))
-//      def tuple[_: P]: P[(Int, Int)] = P("(" ~ number ~ "," ~ number ~ ")")
-//      parse(s, tuple(_)) match {
-//        case Parsed.Success(x, _) => Some(x)
-//        case _ => None
-//      }
-//    }
-//
-//    properties.get(setting).flatMap(intTupleParse) match {
-//      case Some(it) => it
-//      case _ => RunConfig.defaultSettings.get(setting) match {
-//        case Some((a: Int, b: Int)) => updateProperty(setting, (a, b))
-//        case _ => throw new IllegalArgumentException(s"$setting should not be handled as an int tuple!")
-//      }
-//    }
-//  }
 }
 
 object RunConfig {
@@ -95,17 +76,33 @@ object RunConfig {
   )
 
   def getUserConfig(): RunConfig = {
-    // TODO: Find an adequate location to hide this file
     try {
-      val propFile = new File("properties")
-      // TODO: Save a new default config if the file wasn't found
       val props = new Properties()
-      val fis = new InputStreamReader(new FileInputStream(propFile), "UTF-8")
-      props.load(fis)
-      fis.close()
-      RunConfig(props.asScala)
+      val propFile = new File(new File(getUserAppDataFolder), "mv_slide_generator/properties.conf")
+      println(propFile.getAbsolutePath)
+      propFile.getParentFile.mkdirs
+      if(!propFile.exists()) {
+        propFile.createNewFile()
+        val fos = new OutputStreamWriter(new FileOutputStream(propFile), "UTF-8")
+        defaultSettings.foreach({ case (key, value) => props.setProperty(key, value.toString) })
+        props.store(fos, null)
+        fos.close()
+        RunConfig(props.asScala)
+      } else {
+        val fis = new InputStreamReader(new FileInputStream(propFile), "UTF-8")
+        props.load(fis)
+        fis.close()
+        RunConfig(props.asScala)
+      }
     } catch {
-      case io: FileNotFoundException => RunConfig(mutable.Map())
+      case _: FileNotFoundException => RunConfig(mutable.Map())
+    }
+  }
+
+  def getUserAppDataFolder: String = {
+    sys.env.get("APPDATA") match {
+      case Some(dir) => dir
+      case _ => sys.props.get("user.home").getOrElse(throw new FileNotFoundException("Couldn't find a home directory for the user"))
     }
   }
 }
