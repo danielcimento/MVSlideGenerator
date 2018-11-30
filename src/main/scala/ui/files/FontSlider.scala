@@ -1,12 +1,11 @@
-package ui
-
-import java.text.Format
+package ui.files
 
 import javafx.beans.property.{DoubleProperty, IntegerProperty, SimpleIntegerProperty}
 import javafx.geometry.Pos
 import javafx.scene.control.{Label, Slider}
 import javafx.scene.layout.{HBox, Priority}
 import javafx.scene.text.Font
+import ui.Globals
 
 // A widget that holds a font value and shows a label displaying that font's value
 class FontSlider extends HBox {
@@ -25,6 +24,7 @@ class FontSlider extends HBox {
   HBox.setHgrow(fontSlider, Priority.ALWAYS)
 
   val maxProperty: DoubleProperty = fontSlider.maxProperty()
+  visibleProperty().bind(fontSlider.maxProperty.greaterThan(0))
 
   def updateMaxSize(newMax: Int): Unit = fontSlider.setMax(newMax)
   def updateFont(newFont: Int): Unit = fontSlider.setValue(newFont)

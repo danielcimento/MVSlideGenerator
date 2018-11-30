@@ -4,7 +4,7 @@ import javafx.scene.{Group, Scene}
 import javafx.scene.image.Image
 import javafx.scene.layout.GridPane
 import javafx.stage.Stage
-import ui.{ApplicationScene, FileDisplayPane}
+import ui.ApplicationScene
 import java.awt.GraphicsDevice
 import java.awt.GraphicsEnvironment
 

@@ -4,14 +4,18 @@ import javafx.application.Platform
 import javafx.beans.property.DoubleProperty
 import javafx.concurrent.Task
 import javafx.scene.Scene
-import javafx.scene.control.ProgressBar
+import javafx.scene.control.Alert.AlertType
+import javafx.scene.control.{Alert, ProgressBar}
 import javafx.scene.image.Image
 import javafx.scene.layout.{ColumnConstraints, GridPane, Priority, RowConstraints}
 import javafx.stage.Stage
 import model._
+import ui.files.FileDisplayPane
+import ui.images.ImageProcessingArea
 
 class ApplicationScene(val rc: RunConfig)(implicit stage: Stage) extends GridPane {
-  var currentPreview = -1
+  // Defines the line of the input files which we want to render a preview of
+  private var currentPreview = -1
 
   getColumnConstraints.addAll(
     new ColumnConstraints() {
@@ -34,49 +38,66 @@ class ApplicationScene(val rc: RunConfig)(implicit stage: Stage) extends GridPan
   val imageProcessingArea = new ImageProcessingArea(this)
   add(imageProcessingArea, 1, 0, 1, 2)
 
+  // Separate from the renderPreviewImage method, because sometimes we don't want to change the line that's actually being interacted with
   def setPreviewImage(lineNumber: Int): Unit = {
     currentPreview = lineNumber
     renderPreviewImage()
   }
 
+  // If we have a line selected by the user, try to render a preview image for it
   def renderPreviewImage(): Unit = {
-    if(currentPreview >= 0) {
-      val engLine = englishFileArea.getNthLine(currentPreview)
-      val jpLine = japaneseFileArea.getNthLine(currentPreview)
-      if(engLine.isEmpty || jpLine.isEmpty) {
-        imageProcessingArea.displayWarning()
-      } else {
-        val previewImage = GraphicsRenderer.convertLinesToImage(engLine, jpLine, englishFileArea.fontSize, japaneseFileArea.fontSize, rc)
+    (englishFileArea.getNthLine(currentPreview), japaneseFileArea.getNthLine(currentPreview)) match {
+      case (Some(englishLine), Some(japaneseLine)) =>
+        val previewImage = GraphicsRenderer.convertLinesToImage(englishLine, japaneseLine, englishFileArea.fontSize, japaneseFileArea.fontSize, rc)
         imageProcessingArea.updatePreviewImage(previewImage)
-      }
+      // If we couldn't find the line in question, but the user did select something, we display a warning
+      case _ if currentPreview != -1 => imageProcessingArea.displayWarning()
+      case _ => imageProcessingArea.reset()
     }
   }
 
-  def tryLinkingScrolls: Unit = {
+  // We want both panes to scroll simultaneously
+  def tryLinkingScrolls(): Unit = {
     (japaneseFileArea.getScrollbar, englishFileArea.getScrollbar) match {
       case (Some(jsb), Some(esb)) => jsb.valueProperty().bindBidirectional(esb.valueProperty())
       case _ =>
     }
   }
 
-  def createAllImages(outputPath: String, outputListener: DoubleProperty) = {
-    val images = GraphicsRenderer.createAllImages(japaneseFileArea.getAllLines, englishFileArea.getAllLines, japaneseFileArea.fontSize, englishFileArea.fontSize, rc)
-    val saveImages = new Task[Unit]() {
-      override def call(): Unit = {
-        val total = images.size
-        images.zipWithIndex.foreach {
-          case (img, i) =>
-            FileProcessor.saveImageToFile(img, outputPath, f"image$i%04d.png")
-            updateProgress(i, total)
+  // This is the method of the occasion. Does pretty much what the application was meant to do
+  def createAllImages(outputPath: String, outputListener: DoubleProperty): Unit = {
+    if(outputPath.trim.nonEmpty) {
+      // Render all the images (needs to be on the same thread since we're using JavaFX assets)
+      val images = GraphicsRenderer.createAllImages(japaneseFileArea.getLines, englishFileArea.getLines, japaneseFileArea.fontSize, englishFileArea.fontSize, rc)
+      // Then, create a background task to write all those files to the disk, updating the progress parameter as it goes
+      val saveImages = new Task[Unit]() {
+        override def call(): Unit = {
+          val total = images.size
+          images.zipWithIndex.foreach {
+            case (img, i) =>
+              FileProcessor.saveImageToFile(img, outputPath, f"image$i%04d.png")
+              updateProgress(i, total)
+          }
         }
       }
+      outputListener.bind(saveImages.progressProperty)
+      saveImages.setOnSucceeded(_ => cleanUpAfterImageCreation())
+      new Thread(saveImages).start()
+    } else {
+      new Alert(AlertType.WARNING,
+        """
+          | MVSlideGenerator will not save images to an empty directory.
+          | This is to prevent littering your root directory with images.
+          | Saving images to the empty directory is usually not desired.
+        """.stripMargin).showAndWait()
+      imageProcessingArea.reset()
     }
-    outputListener.bind(saveImages.progressProperty)
-    saveImages.setOnSucceeded(_ => imageProcessingArea.finishUpdatingImages())
-    new Thread(saveImages).start()
   }
 
-  def getImageLineCount: Int = {
-    List(japaneseFileArea.getAllLines.size, englishFileArea.getAllLines.size).max
+  def cleanUpAfterImageCreation(): Unit = {
+    currentPreview = -1
+    englishFileArea.reset()
+    japaneseFileArea.reset()
+    imageProcessingArea.reset()
   }
 }

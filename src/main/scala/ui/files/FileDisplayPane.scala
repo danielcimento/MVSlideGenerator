@@ -1,22 +1,25 @@
-package ui
+package ui.files
 
-import javafx.beans.property.{IntegerProperty, SimpleIntegerProperty}
-import javafx.beans.value.{ChangeListener, ObservableValue}
+import javafx.beans.property.{IntegerProperty, ListProperty, SimpleIntegerProperty, SimpleListProperty}
 import javafx.concurrent.Task
 import javafx.geometry.{Insets, Pos}
 import javafx.scene.control._
 import javafx.scene.layout.{HBox, Priority, VBox}
-import javafx.stage.{FileChooser, Stage}
-import javafx.stage.FileChooser.ExtensionFilter
 import javafx.scene.text.Font
+import javafx.stage.FileChooser.ExtensionFilter
+import javafx.stage.{FileChooser, Stage}
 import model.{TextProcessor, TextRenderer}
+import ui.{ApplicationScene, Globals}
 
 import scala.collection.JavaConverters._
 import scala.io.Source
 
 class FileDisplayPane(labelText: String, val parent: ApplicationScene, allowSplitting: Boolean)(implicit stage: Stage) extends VBox(10.0) {
+  // This is the primary property that needs to be visible to the parent scene
   private val _fontSize: IntegerProperty = new SimpleIntegerProperty(0)
   def fontSize: Int = _fontSize.getValue
+  private val _lines: ListProperty[String] = new SimpleListProperty[String]()
+  def getLines: List[String] = _lines.get().asScala.toList
 
   // When the font size is changes, we want to wait a bit, then render a new preview (to prevent stuttering renders)
   _fontSize.addListener((_, _, newVal) => {
@@ -37,47 +40,33 @@ class FileDisplayPane(labelText: String, val parent: ApplicationScene, allowSpli
     new Thread(waitAndUpdateImage).start()
   })
 
+  // First we do some nice padding to make the labels look nicer
   setPadding(new Insets(0, 10, 0, 10))
   val label: Label = new Label(labelText) {
     setPadding(new Insets(10, 0, 0, 5))
     setFont(Font.font(Globals.uiFont))
   }
 
-  var fileRawLines: List[String] = List()
-  val fileContents: ListView[String] = new ListView[String]() {
-    setEditable(false)
-  }
-  fileContents.setCellFactory(_ => new ListCell[String] {
-    override def updateItem(item: String, empty: Boolean): Unit = {
-      super.updateItem(item, empty)
-      if (item != null) {
-        setText(TextProcessor.partitionLinesAndReadings(item)._1)
-        setFont(Font.font(Globals.uiFont))
-      }
-    }
-
-    setOnMouseClicked(_ => {
-      parent.setPreviewImage(getIndex)
-    })
-  })
+  // These are the two components mainly responsible for manipulating the exposed properties
+  val fileContents: ListView[String] = new FileContentArea(parent.setPreviewImage)
+  _lines.bind(fileContents.itemsProperty())
 
   val fontSlider: FontSlider = new FontSlider
   _fontSize.bind(fontSlider.fontValue)
-  fontSlider.visibleProperty().bind(fontSlider.maxProperty.greaterThan(0))
 
-  val button: Button = new Button("Load File") {
-    setOnAction(_ => fillTextAreaWithFileContents)
-    setFont(Font.font(Globals.uiFont))
-  }
+  // The row below the list of lines which allows user interaction
+  val toolRow: HBox = new HBox(10.0) {
+    val button: Button = new Button("Load File") {
+      setOnAction(_ => fillTextAreaWithFileContents)
+      setFont(Font.font(Globals.uiFont))
+    }
 
-
-  val buttonBox: HBox = new HBox(10.0) {
     setAlignment(Pos.CENTER)
     getChildren.addAll(fontSlider, button)
   }
   HBox.setHgrow(fontSlider, Priority.ALWAYS)
 
-  getChildren.addAll(label, fileContents, buttonBox)
+  getChildren.addAll(label, fileContents, toolRow)
 
   def fillTextAreaWithFileContents: Unit = {
     val fc = new FileChooser
@@ -88,24 +77,25 @@ class FileDisplayPane(labelText: String, val parent: ApplicationScene, allowSpli
     val chosenFile = fc.showOpenDialog(stage)
     if(chosenFile != null) {
       val lines = Source.fromFile(chosenFile, "UTF-8").getLines().toList
-      fileRawLines = lines
       fileContents.getItems.setAll(lines: _*)
-      parent.tryLinkingScrolls
-      val maxFontSize = TextRenderer.getLargestFontSize(getAllLines.map(TextProcessor.partitionLinesAndReadings(_)._1), parent.rc, allowSplitting)
+      parent.tryLinkingScrolls()
+      val maxFontSize = TextRenderer.getLargestFontSize(getLines.map(TextProcessor.partitionLinesAndReadings(_)._1), parent.rc, allowSplitting)
       fontSlider.updateMaxSize(maxFontSize)
       fontSlider.updateFont(maxFontSize)
     }
   }
 
-  def getNthLine(n: Int): String = {
-    fileContents.getSelectionModel.select(n)
-    fileRawLines.lift(n) match {
-      case Some(s) => s
-      case _ => ""
-    }
+  def reset(): Unit = {
+    fileContents.getItems.clear()
+    fontSlider.updateMaxSize(0)
+    fontSlider.updateFont(0)
   }
 
-  def getAllLines: List[String] = fileContents.getItems.iterator().asScala.toList
+  def getNthLine(n: Int): Option[String] = {
+    // Highlight the line being queried (so the user can see which lines are being rendered)
+    fileContents.getSelectionModel.select(n)
+    getLines.lift(n)
+  }
 
   def getScrollbar: Option[ScrollBar] = {
     fileContents.lookup(".scroll-bar") match {

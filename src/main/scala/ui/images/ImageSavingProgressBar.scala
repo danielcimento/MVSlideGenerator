@@ -1,4 +1,4 @@
-package ui
+package ui.images
 
 import javafx.beans.property.DoubleProperty
 import javafx.scene.control.{Label, ProgressBar}

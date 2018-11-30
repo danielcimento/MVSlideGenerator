@@ -47,16 +47,19 @@ object GraphicsRenderer extends GraphicsHelpers {
     twoLines: Boolean = false
   ): Int = {
 
-    if(twoLines) {
+    if(line.isEmpty) {
+      // This usually only becomes relevant in the case of failed splits. It's mostly here to prevent weird interactions, but won't often see much use
+      Int.MaxValue
+    } else if(twoLines) {
       val (firstLine, secondLine) = TextProcessor.cleaveSentence(line)
 
-      return Math.min(
+      Math.min(
         getFontSizeForLine(firstLine, ppi, availableWidth, fontFamily),
         getFontSizeForLine(secondLine, ppi, availableWidth, fontFamily)
       )
+    } else {
+      largestIntSatisfyingPredicate(canFitOnOneLine(line, _, availableWidth, fontFamily))
     }
-
-    largestIntSatisfyingPredicate(canFitOnOneLine(line, _, availableWidth, fontFamily))
   }
 
   def renderFuriganaFragment(
