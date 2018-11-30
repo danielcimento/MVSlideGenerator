@@ -1,5 +1,6 @@
 package ui
 
+import javafx.beans.property.{IntegerProperty, SimpleIntegerProperty}
 import javafx.beans.value.{ChangeListener, ObservableValue}
 import javafx.concurrent.Task
 import javafx.geometry.{Insets, Pos}
@@ -14,13 +15,32 @@ import scala.collection.JavaConverters._
 import scala.io.Source
 
 class FileDisplayPane(labelText: String, val parent: ApplicationScene, allowSplitting: Boolean)(implicit stage: Stage) extends VBox(10.0) {
-  var fontSize: Int = 0
-  val textSize = 16.0
+  private val _fontSize: IntegerProperty = new SimpleIntegerProperty(0)
+  def fontSize: Int = _fontSize.getValue
+
+  // When the font size is changes, we want to wait a bit, then render a new preview (to prevent stuttering renders)
+  _fontSize.addListener((_, _, newVal) => {
+    // First, whenever our font size changes, start a new task that just waits .5 seconds in the background
+    val waitAndUpdateImage = new Task[Unit]() {
+      override def call(): Unit = {
+        Thread.sleep(500)
+      }
+    }
+    // When those .5 seconds pass, if the value we had previously updated to is still our current font value
+    // (i.e. user stopped moving slider), then we render a new preview image
+    waitAndUpdateImage.setOnSucceeded(_ => {
+      if(newVal.intValue() == this._fontSize.getValue) {
+        parent.renderPreviewImage()
+      }
+    })
+
+    new Thread(waitAndUpdateImage).start()
+  })
 
   setPadding(new Insets(0, 10, 0, 10))
   val label: Label = new Label(labelText) {
     setPadding(new Insets(10, 0, 0, 5))
-    setFont(Font.font(textSize))
+    setFont(Font.font(Globals.uiFont))
   }
 
   var fileRawLines: List[String] = List()
@@ -32,35 +52,30 @@ class FileDisplayPane(labelText: String, val parent: ApplicationScene, allowSpli
       super.updateItem(item, empty)
       if (item != null) {
         setText(TextProcessor.partitionLinesAndReadings(item)._1)
-        setFont(Font.font(textSize))
+        setFont(Font.font(Globals.uiFont))
       }
     }
 
-    setOnMouseClicked(e => {
+    setOnMouseClicked(_ => {
       parent.setPreviewImage(getIndex)
     })
   })
 
-  val fontLabel = new Label("Font Size: ...") {
-    setFont(Font.font(textSize))
-  }
-  val fontSlider: Slider = new Slider()
-  fontSlider.setMin(0.0)
-  fontSlider.setMax(0.0)
-  fontSlider.valueProperty().addListener(new ChangeListener[Number] {
-    override def changed(observable: ObservableValue[_ <: Number], oldValue: Number, newValue: Number): Unit = {
-      updateFont(newValue.intValue())
-    }
-  })
-  HBox.setHgrow(fontSlider, Priority.ALWAYS)
+  val fontSlider: FontSlider = new FontSlider
+  _fontSize.bind(fontSlider.fontValue)
+  fontSlider.visibleProperty().bind(fontSlider.maxProperty.greaterThan(0))
+
   val button: Button = new Button("Load File") {
     setOnAction(_ => fillTextAreaWithFileContents)
-    setFont(Font.font(textSize))
+    setFont(Font.font(Globals.uiFont))
   }
+
+
   val buttonBox: HBox = new HBox(10.0) {
-    setAlignment(Pos.BASELINE_RIGHT)
-    getChildren.addAll(fontLabel, fontSlider, button)
+    setAlignment(Pos.CENTER)
+    getChildren.addAll(fontSlider, button)
   }
+  HBox.setHgrow(fontSlider, Priority.ALWAYS)
 
   getChildren.addAll(label, fileContents, buttonBox)
 
@@ -76,7 +91,9 @@ class FileDisplayPane(labelText: String, val parent: ApplicationScene, allowSpli
       fileRawLines = lines
       fileContents.getItems.setAll(lines: _*)
       parent.tryLinkingScrolls
-      recalculateMaxFont()
+      val maxFontSize = TextRenderer.getLargestFontSize(getAllLines.map(TextProcessor.partitionLinesAndReadings(_)._1), parent.rc, allowSplitting)
+      fontSlider.updateMaxSize(maxFontSize)
+      fontSlider.updateFont(maxFontSize)
     }
   }
 
@@ -96,31 +113,4 @@ class FileDisplayPane(labelText: String, val parent: ApplicationScene, allowSpli
       case _ => None
     }
   }
-
-  def recalculateMaxFont(): Unit = {
-    fontSize = TextRenderer.getLargestFontSize(getAllLines.map(TextProcessor.partitionLinesAndReadings(_)._1), parent.rc, allowSplitting)
-    fontSlider.setMax(fontSize)
-    updateFont(fontSize)
-  }
-
-  private def updateFont(fontSize: Int): Unit = {
-    this.fontSize = fontSize
-    fontSlider.setValue(fontSize)
-    fontLabel.setText(f"Font Size: $fontSize%02d")
-    val waitAndUpdateImage = new Task[Int]() {
-        override def call(): Int = {
-          Thread.sleep(500)
-          fontSize
-        }
-    }
-    waitAndUpdateImage.setOnSucceeded(_ => {
-        if(waitAndUpdateImage.getValue == this.fontSize) {
-          parent.renderPreviewImage()
-        }
-      })
-
-    new Thread(waitAndUpdateImage).start()
-  }
-
-  def getFontSize(): Int = fontSize
 }

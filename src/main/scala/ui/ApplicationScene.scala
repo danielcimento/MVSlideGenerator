@@ -46,7 +46,7 @@ class ApplicationScene(val rc: RunConfig)(implicit stage: Stage) extends GridPan
       if(engLine.isEmpty || jpLine.isEmpty) {
         imageProcessingArea.displayWarning()
       } else {
-        val previewImage = GraphicsRenderer.convertLinesToImage(engLine, jpLine, englishFileArea.getFontSize(), japaneseFileArea.getFontSize(), rc)
+        val previewImage = GraphicsRenderer.convertLinesToImage(engLine, jpLine, englishFileArea.fontSize, japaneseFileArea.fontSize, rc)
         imageProcessingArea.updatePreviewImage(previewImage)
       }
     }
@@ -60,7 +60,7 @@ class ApplicationScene(val rc: RunConfig)(implicit stage: Stage) extends GridPan
   }
 
   def createAllImages(outputPath: String, outputListener: DoubleProperty) = {
-    val images = GraphicsRenderer.createAllImages(japaneseFileArea.getAllLines, englishFileArea.getAllLines, japaneseFileArea.getFontSize(), englishFileArea.getFontSize(), rc)
+    val images = GraphicsRenderer.createAllImages(japaneseFileArea.getAllLines, englishFileArea.getAllLines, japaneseFileArea.fontSize, englishFileArea.fontSize, rc)
     val saveImages = new Task[Unit]() {
       override def call(): Unit = {
         val total = images.size

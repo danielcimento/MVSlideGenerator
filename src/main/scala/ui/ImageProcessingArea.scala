@@ -37,33 +37,28 @@ class ImageProcessingArea(parent: ApplicationScene)(implicit stage: Stage) exten
   val outputPathGroup = new HBox(10.0)
   outputPathGroup.getChildren.addAll(outputPathLabel, outputPath, outputPathSelect)
 
-  val progressStackpane = new StackPane()
-  val creatingProgress = new ProgressBar()
-  val progressLabel = new Label("Saving images...")
-  progressStackpane.getChildren.addAll(creatingProgress, progressLabel)
-  creatingProgress.setMaxWidth(Double.MaxValue)
-  progressStackpane.setVisible(false)
-  progressStackpane.setMaxHeight(Double.MaxValue)
+  val progressBar = new ImageSavingProgressBar()
+
 
   val createButton = new Button("Create Slides")
 
   val createGroup = new HBox(10.0)
-  createGroup.getChildren.addAll(progressStackpane, createButton)
+  createGroup.getChildren.addAll(progressBar, createButton)
   createGroup.setAlignment(Pos.BASELINE_RIGHT)
-  HBox.setHgrow(progressStackpane, Priority.ALWAYS)
+  HBox.setHgrow(progressBar, Priority.ALWAYS)
 
 
   createButton.setOnAction(_ => {
     createButton.setDisable(true)
-    progressStackpane.setVisible(true)
-    parent.createAllImages(outputPath.getText, creatingProgress.progressProperty())
+    progressBar.turnOn()
+    parent.createAllImages(outputPath.getText, progressBar.progressProperty)
   })
 
 
   getChildren.addAll(label, emptySlidePreview, outputPathGroup, createGroup)
 
   def finishUpdatingImages(): Unit = {
-      progressStackpane.setVisible(false)
+      progressBar.turnOff()
       createButton.setDisable(false)
   }
 
