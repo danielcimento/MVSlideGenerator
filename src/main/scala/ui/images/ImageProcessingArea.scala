@@ -1,20 +1,35 @@
 package ui.images
 
+import de.jensd.fx.glyphs.GlyphIcon
 import javafx.geometry.{Insets, Pos}
 import javafx.scene.control.{Button, Label, TextField}
 import javafx.scene.image.{Image, ImageView}
-import javafx.scene.layout.{HBox, Priority, StackPane, VBox}
+import javafx.scene.layout._
 import javafx.scene.text.Font
 import javafx.stage.{DirectoryChooser, Stage}
-import ui.ApplicationScene
+import ui.{ApplicationScene, Globals}
 
 class ImageProcessingArea(parent: ApplicationScene)(implicit stage: Stage) extends VBox(10.0) {
   setPadding(new Insets(0,10,0,0))
 
-  val label: Label = new Label("Slide Preview") {
-    setPadding(new Insets(10, 0, 0, 5))
-    setFont(Font.font(16.0))
+  private val labelAndSettingsBox = new HBox() {
+    val label: Label = new Label("Slide Preview") {
+      setPadding(new Insets(10, 0, 0, 5))
+      setFont(Font.font(Globals.uiFont))
+    }
+
+    val filler = new Region()
+    HBox.setHgrow(filler, Priority.ALWAYS)
+
+    val settingsButton = new Button()
+    settingsButton.setGraphic(new ImageView(new Image(getClass.getResourceAsStream("cogs.png"), 24, 24, true, true)){
+      setPadding(new Insets(10, 5, 0, 0))
+    })
+
+    setAlignment(Pos.CENTER)
+    getChildren.addAll(label, filler, settingsButton)
   }
+
 
   val slidePreview = new SlidePreview(this)
   slidePreview.blank("A slide preview will appear here when you upload your lyric files and select a line.")
@@ -38,7 +53,7 @@ class ImageProcessingArea(parent: ApplicationScene)(implicit stage: Stage) exten
   })
 
 
-  getChildren.addAll(label, slidePreview, outputPathSelection, createGroup)
+  getChildren.addAll(labelAndSettingsBox, slidePreview, outputPathSelection, createGroup)
 
   def updatePreviewImage(img: Image): Unit = {
     slidePreview.image(img)

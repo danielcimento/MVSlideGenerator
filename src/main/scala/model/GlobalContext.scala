@@ -1,6 +1,5 @@
 package model
 
-import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.Logger
 
 object GlobalContext {
@@ -22,5 +21,4 @@ object GlobalContext {
 
   lazy val logger = Logger("Global")
 
-  lazy val conf = ConfigFactory.load()
 }

@@ -3,8 +3,6 @@ package model
 import java.io._
 import java.util.Properties
 
-import fastparse.NoWhitespace._
-import fastparse._
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable

@@ -235,7 +235,7 @@ object GraphicsRenderer extends GraphicsHelpers {
   }
 
   def createAllImages(japaneseLines: List[String], englishLines: List[String], jpFontSize: Int, engFontSize: Int, rc: RunConfig): List[Image] = {
-    val linePairs = englishLines.zip(japaneseLines)
+    val linePairs = englishLines.zipAll(japaneseLines, "", "")
     linePairs.map { case (eL, jL) => convertLinesToImage(eL, jL, engFontSize, jpFontSize, rc) }
   }
 

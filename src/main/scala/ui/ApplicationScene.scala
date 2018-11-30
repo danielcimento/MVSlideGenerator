@@ -5,7 +5,7 @@ import javafx.beans.property.DoubleProperty
 import javafx.concurrent.Task
 import javafx.scene.Scene
 import javafx.scene.control.Alert.AlertType
-import javafx.scene.control.{Alert, ProgressBar}
+import javafx.scene.control.{Alert, ButtonType, ProgressBar}
 import javafx.scene.image.Image
 import javafx.scene.layout.{ColumnConstraints, GridPane, Priority, RowConstraints}
 import javafx.stage.Stage
@@ -66,31 +66,46 @@ class ApplicationScene(val rc: RunConfig)(implicit stage: Stage) extends GridPan
 
   // This is the method of the occasion. Does pretty much what the application was meant to do
   def createAllImages(outputPath: String, outputListener: DoubleProperty): Unit = {
-    if(outputPath.trim.nonEmpty) {
-      // Render all the images (needs to be on the same thread since we're using JavaFX assets)
-      val images = GraphicsRenderer.createAllImages(japaneseFileArea.getLines, englishFileArea.getLines, japaneseFileArea.fontSize, englishFileArea.fontSize, rc)
-      // Then, create a background task to write all those files to the disk, updating the progress parameter as it goes
-      val saveImages = new Task[Unit]() {
-        override def call(): Unit = {
-          val total = images.size
-          images.zipWithIndex.foreach {
-            case (img, i) =>
-              FileProcessor.saveImageToFile(img, outputPath, f"image$i%04d.png")
-              updateProgress(i, total)
+    if(outputPath.isEmpty) {
+      new Alert(
+        AlertType.WARNING,
+        "MVSlideGenerator will not save images to an empty directory. This is to prevent littering your root directory with images. Saving images to the empty directory is usually not desired."
+      ).showAndWait()
+      imageProcessingArea.reset()
+    } else {
+      // This is the stuff that actually gets done.
+      // We convert it to a helper function because we want to
+      // prompt confirmation if lines are mismatched.
+      def execute(): Unit = {
+        // Render all the images (needs to be on the same thread since we're using JavaFX assets)
+        val images = GraphicsRenderer.createAllImages(japaneseFileArea.getLines, englishFileArea.getLines, japaneseFileArea.fontSize, englishFileArea.fontSize, rc)
+        // Then, create a background task to write all those files to the disk, updating the progress parameter as it goes
+        val saveImages = new Task[Unit]() {
+          override def call(): Unit = {
+            val total = images.size
+            images.zipWithIndex.foreach {
+              case (img, i) =>
+                FileProcessor.saveImageToFile(img, outputPath, f"image$i%04d.png")
+                updateProgress(i, total)
+            }
           }
         }
+        outputListener.bind(saveImages.progressProperty)
+        saveImages.setOnSucceeded(_ => cleanUpAfterImageCreation())
+        new Thread(saveImages).start()
       }
-      outputListener.bind(saveImages.progressProperty)
-      saveImages.setOnSucceeded(_ => cleanUpAfterImageCreation())
-      new Thread(saveImages).start()
-    } else {
-      new Alert(AlertType.WARNING,
-        """
-          | MVSlideGenerator will not save images to an empty directory.
-          | This is to prevent littering your root directory with images.
-          | Saving images to the empty directory is usually not desired.
-        """.stripMargin).showAndWait()
-      imageProcessingArea.reset()
+      if(japaneseFileArea.getLines.size != englishFileArea.getLines.size) {
+        val mismatchWarning = new Alert(
+          AlertType.CONFIRMATION,
+          "Your files have a mis-matched number of lines, so some slides will not have text on one half of the image. Would you still like to proceed?"
+        )
+        mismatchWarning.showAndWait().ifPresent {
+          case ButtonType.OK => execute()
+          case _ => imageProcessingArea.reset()
+        }
+      } else {
+        execute()
+      }
     }
   }
 
