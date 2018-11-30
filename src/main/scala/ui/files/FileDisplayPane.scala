@@ -5,7 +5,7 @@ import javafx.concurrent.Task
 import javafx.geometry.{Insets, Pos}
 import javafx.scene.control._
 import javafx.scene.layout.{HBox, Priority, VBox}
-import javafx.scene.text.Font
+import javafx.scene.text.{Font, TextFlow}
 import javafx.stage.FileChooser.ExtensionFilter
 import javafx.stage.{FileChooser, Stage}
 import model.{TextProcessor, TextRenderer}
@@ -48,7 +48,7 @@ class FileDisplayPane(labelText: String, val parent: ApplicationScene, allowSpli
   }
 
   // These are the two components mainly responsible for manipulating the exposed properties
-  val fileContents: ListView[String] = new FileContentArea(parent.setPreviewImage)
+  val fileContents: FileContentArea = new FileContentArea(parent.setPreviewImage)
   _lines.bind(fileContents.itemsProperty())
 
   val fontSlider: FontSlider = new FontSlider
