@@ -25,16 +25,43 @@ When the app is run, it will open a window that looks like this:
 
 ![new_app](https://imgur.com/gIks3YA.png)
 
+Clicking one of the "Load File" buttons on the left will allow you to pick a file containing the lines that go on the top and bottom of the image.
 
-Then, for each line, it will create a black slide with the text formatted over it. Here is an example slide:
+![opening_text](https://imgur.com/NHvoes5.png)
 
-![slide_example](https://i.imgur.com/XUOIEQg.png)
+Once you've selected the lyric file, it will fill the text view on the left.
 
-In order to add furigana to text, just wrap any kanji like so `[Kanji|Reading]`
+![text_view](https://imgur.com/X1BEx6f.png)
+
+The same is true for the bottom section, but the bottom text area will allow you to add furigana to the line.
+
+If you want furigana to Japanese text, in the input file, wrap any kanji in this way: `[Kanji|Reading]`
 
 For example, the example song's Japanese lyric file contained the line:
 
-`[明|あ]け[渡|わた]してはいけない[場所|ばしょ] それを[心|こころ]と[呼|よ]ぶんでしょ`
+`アダムにとって[知恵|ちえ]の[樹|き]の[実|み]とは`
+
+When you load the file, you'll know you have succeeded, as the furigana formatting will not be shown, and the words which will have furigana are highlighted.
+
+![text_view_2](https://imgur.com/TeNZhSv.png)
+
+Once you've loaded both files, clicking any of the lines will show a preview of the slide that will be created for it.
+
+![previews](https://imgur.com/r4xsnxS.png)
+
+By default, the images will use the largest font that keeps the text within the specified boundaries, but you can reduce the font size for aesthetic reasons using the font sliders below each file area.
+
+![fonts](https://imgur.com/si3G9js.png)
+
+All that's left is to type in the output path where you want the images to be saved. This can be entered manually or chosen using the directory selector.
+
+![directories](https://imgur.com/bo43v50.png)
+
+Once that's done, just click create slides, and it will create all the images (there is a short delay of lag (~3 seconds) when creating the image. I've tried to remove the lag by creating the images in the background but there are technical reasons why that isn't possible.
+
+For each line in the input files, the app will create a black slide with the text formatted over it. Here is an example slide:
+
+![slide_example](https://i.imgur.com/XUOIEQg.png)
 
 This tool also features a number of additional parameters and flags. The following is an attempt at a comprehensive list:
 
