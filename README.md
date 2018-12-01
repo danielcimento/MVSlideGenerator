@@ -45,7 +45,7 @@ For example, the example song's Japanese lyric file contained the line:
 
 `アダムにとって[知恵|ちえ]の[樹|き]の[実|み]とは`
 
-When you load the file, you'll know you have succeeded, as the furigana formatting will not be shown, and the words which will have furigana are highlighted.
+When you load the file, you'll know you have succeeded if the bracket-style furigana formatting isn't shown, and the characters with furigana are highlighted.
 
 ![text_view_2](https://imgur.com/TeNZhSv.png)
 
