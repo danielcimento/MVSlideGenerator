@@ -9,7 +9,7 @@ An example of a lyric video made with this tool can be found here:
 
 (Note: Unfortunately, due to copyright reasons, this video is not available in Japan)
 
-This tool doesn't only have to be used for Japanese with furigana, as long as you want to position smaller text over other text.
+This tool doesn't only have to be used for Japanese with furigana: it can be used for any application where you want to position smaller text over other text.
 
 ## Download and Installation
 
@@ -17,7 +17,7 @@ This project can be compiled to a .jar file using the `sbt assembly` command, wh
 
 In the command's output, it will tell you where it's put the file. In my case, it was `target\scala-2.12\MVSlideGenerator-assembly-0.1.jar`
 
-If you don't know how to run `sbt` programs, you can download a pre-assembled version of the jar [here](https://drive.google.com/open?id=1fwNmWAa9OaZGlzbWeUAf1Qjl8yTcu7cs), though it will always be most up-to-date when compiled manually, and the pre-assembled jar isn't guaranteed to run on all systems (though I would expect it to)
+If you don't have `sbt` or don't know how to use it, you can download a pre-assembled version of the jar [here](https://drive.google.com/open?id=1fwNmWAa9OaZGlzbWeUAf1Qjl8yTcu7cs), but I can't guarantee the pre-assembled jar will run on all systems (though I would expect it to).
 
 After acquiring the .jar, it can be run normally to open the application. If you have the Java Runtime Environment installed, you should be able to just double-click the file.
 
