@@ -1,5 +1,5 @@
 # MVSlideGenerator
-A "command line" application built to facilitate the making of slides for lyric videos. More specifically, English/Japanese lyric videos.
+A GUI application built to facilitate the making of slides for lyric videos. More specifically, English/Japanese lyric videos.
 
 I built this tool after making two lyric videos for songs I enjoyed ([オーダーメイド](https://www.youtube.com/watch?v=ApZc9MyTsi4) and [つじつま合わせに生まれた僕等](https://www.youtube.com/watch?v=RL7arkNfnuA))
 
@@ -9,21 +9,22 @@ An example of a lyric video made with this tool can be found here:
 
 (Note: Unfortunately, due to copyright reasons, this video is not available in Japan)
 
-Update (2/22/2018): It occurs to me that not only is this useful for creating furigana over text, but it also can be used to add guitar chords over the lyrics of a song. In this case, the "english file" should just be empty lines and the "japanese file" should be whichever lyrics you want with the chords in the furigana positions.
+This tool doesn't only have to be used for Japanese with furigana, as long as you want to position smaller text over other text.
 
 ## Download and Installation
 
-This project can be compiled to a .jar file using the `sbt assembly` command, which the project depends on. This .jar can then be run normally, but I prefer to move the package to a bin folder and add the following line to my .bashrc:
+This project can be compiled to a .jar file using the `sbt assembly` command, which the project depends on. 
 
-`alias lyric-create="java -jar ~/Documents/Code/bin/mv-slide-generator.jar"`
+After building the jar, it can be run normally to open the application.
 
-After doing so, the command can be run simply by typing:
-
-`lyric-create english_in_file japanese_in_file`
+When the application runs, it will save a settings file in your appdata directory. These settings can be manually edited, but a settings menu is on the way soon.
 
 ## Usage
 
-This tool will automatically parse an English lyric file and a Japanese lyric file, assuming each line corresponds to its translation line. It will then parse the readings for the Japanese text and format furigana over the Kanji.
+When the app is run, it will open a window that looks like this:
+
+![new_app](https://imgur.com/gIks3YA.png)
+
 
 Then, for each line, it will create a black slide with the text formatted over it. Here is an example slide:
 
