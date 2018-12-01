@@ -63,6 +63,8 @@ All that's left is to specify the output path where you want the images to be sa
 
 Once that's done, just click create slides, and it will create all the images. There is a short delay of lag (~3 seconds) when creating the image. I've tried to remove the lag by creating the images in the background but there are technical reasons why that isn't possible.
 
-For each line in the input files, the app will create a black slide with the text formatted over it. Here is an example slide:
+For each pair of lines in the input files, the app will create a black slide with the text formatted over it. Here is an example slide:
 
 ![slide_example](https://imgur.com/LH7Emic.png)
+
+If you want, you can instead use a transparent background and add a white stroke to the text (good for overlaying the lyrics over some other video or image) by going into the `mv_slide_generator/properties.conf` file (in your %APPDATA% or home directory) and changing the line `transparentStroked=false` to `transparentStroke=true`, though I haven't personally tested this much.
