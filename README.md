@@ -15,7 +15,11 @@ This tool doesn't only have to be used for Japanese with furigana, as long as yo
 
 This project can be compiled to a .jar file using the `sbt assembly` command, which the project depends on. 
 
-After building the jar, it can be run normally to open the application.
+In the command's output, it will tell you where it's put the file. In my case, it was `target\scala-2.12\MVSlideGenerator-assembly-0.1.jar`
+
+If you don't know how to run `sbt` programs, you can download a pre-assembled version of the jar [here](https://drive.google.com/open?id=1fwNmWAa9OaZGlzbWeUAf1Qjl8yTcu7cs), though it will always be most up-to-date when compiled manually, and the pre-assembled jar isn't guaranteed to run on all systems (though I would expect it to)
+
+After acquiring the .jar, it can be run normally to open the application. If you have the Java Runtime Environment installed, you should be able to just double-click the file.
 
 When the application runs, it will save a settings file in your appdata directory. These settings can be manually edited, but a settings menu is on the way soon.
 
@@ -53,29 +57,12 @@ By default, the images will use the largest font that keeps the text within the 
 
 ![fonts](https://imgur.com/si3G9js.png)
 
-All that's left is to type in the output path where you want the images to be saved. This can be entered manually or chosen using the directory selector.
+All that's left is to specify the output path where you want the images to be saved. This can be entered manually or chosen using the directory selector. You must input something, or the app will refuse to create the images.
 
 ![directories](https://imgur.com/bo43v50.png)
 
-Once that's done, just click create slides, and it will create all the images (there is a short delay of lag (~3 seconds) when creating the image. I've tried to remove the lag by creating the images in the background but there are technical reasons why that isn't possible.
+Once that's done, just click create slides, and it will create all the images. There is a short delay of lag (~3 seconds) when creating the image. I've tried to remove the lag by creating the images in the background but there are technical reasons why that isn't possible.
 
 For each line in the input files, the app will create a black slide with the text formatted over it. Here is an example slide:
 
-![slide_example](https://i.imgur.com/XUOIEQg.png)
-
-This tool also features a number of additional parameters and flags. The following is an attempt at a comprehensive list:
-
-```
-Usage: lyric-create <english-input-file> <japanese-input-file>
-   Command line arguments:
-     -e <font-min> <font-max> : Sets the English font size range (Default: 80 to 100)
-     -j <font-min> <font-max> : Sets the Japanese font size range (Default: 70 to 100)
-     -r <width> <height> : Sets the resulting image resolution (Default: 1920 by 1080)
-     -p <padding> : Sets the horizontal padding around lines (Default: 50 pixels)
-     -P <ppi> : Sets the ppi (Default: 72ppi)
-     -f <typeface> : Sets the typeface. See note 1 (Default: Meiryo)
-     -l <spacing> : Sets the line spacing for English text (Default: 50 pixels)
-     -F <spacing> : Sets the spacing between Kanji and Furigana (Default: 15 pixels)
-   Note 1: This application produced bolded text on slides, so if the font given does not have a bold counterpart
-   then errors or unexpected behavior may occur during rendering.
-```
+![slide_example](https://imgur.com/LH7Emic.png)
