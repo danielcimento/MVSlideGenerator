@@ -3,15 +3,13 @@ package ui.files
 import javafx.beans.binding.Bindings
 import javafx.beans.property.SimpleListProperty
 import javafx.collections.{ListChangeListener, ObservableArray}
-import javafx.scene.control.{ListCell, ListView}
+import javafx.scene.control.{ListCell, ListView, Tooltip}
 import javafx.scene.paint.Color
 import javafx.scene.text.{Font, Text, TextFlow}
 import model.{TextProcessor, TextWithReading}
 import ui.Globals
 
 class FileContentArea(onClickListener: Int => Unit) extends ListView[String] {
-  val rawLines = new SimpleListProperty[String]()
-
   setEditable(false)
   setDisable(true)
   disableProperty.bind(Bindings.isEmpty(getItems))
@@ -34,14 +32,15 @@ class FileContentArea(onClickListener: Int => Unit) extends ListView[String] {
       case TextWithReading(base, "") => new Text(base)
       case TextWithReading(base, reading) =>
         val formattedText = new Text(base)
-        // TODO: Pick a more appropriate style/color
-        formattedText.setFill(Color.DARKORANGE)
-        // TODO: Add popup
-        formattedText.setOnMouseEntered(_ => ())
-        formattedText.setOnMouseExited(_ => ())
+        formattedText.setFill(Color.SLATEBLUE)
+        formattedText.setUnderline(true)
+        val readingTooltip = new Tooltip(reading) {
+          setFont(Font.font(Globals.uiFont))
+        }
+        formattedText.setOnMouseEntered(_ => Tooltip.install(formattedText, readingTooltip))
+        formattedText.setOnMouseExited(_ => Tooltip.uninstall(formattedText, readingTooltip))
         formattedText
-    })
-    texts.foreach(txt => txt.setFont(Font.font(Globals.uiFont)))
+    }).map(txt => { txt.setFont(Font.font(Globals.uiFont)); txt })
     new TextFlow(texts: _*)
   }
 }
