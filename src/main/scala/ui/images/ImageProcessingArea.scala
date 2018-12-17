@@ -22,7 +22,7 @@ class ImageProcessingArea(parent: ApplicationScene)(implicit stage: Stage) exten
     HBox.setHgrow(filler, Priority.ALWAYS)
 
     val settingsButton = new Button()
-    settingsButton.setGraphic(new ImageView(new Image(getClass.getResourceAsStream("cogs.png"), 24, 24, true, true)){
+    settingsButton.setGraphic(new ImageView(new Image(getClass.getClassLoader().getResourceAsStream("cogs.png"), 24, 24, true, true)){
       setPadding(new Insets(10, 5, 0, 0))
     })
 
