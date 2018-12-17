@@ -1,5 +1,5 @@
 # MVSlideGenerator
-A "command line" application built to facilitate the making of slides for lyric videos. More specifically, English/Japanese lyric videos.
+A GUI application built to facilitate the making of slides for lyric videos. More specifically, English/Japanese lyric videos.
 
 I built this tool after making two lyric videos for songs I enjoyed ([オーダーメイド](https://www.youtube.com/watch?v=ApZc9MyTsi4) and [つじつま合わせに生まれた僕等](https://www.youtube.com/watch?v=RL7arkNfnuA))
 
@@ -9,45 +9,62 @@ An example of a lyric video made with this tool can be found here:
 
 (Note: Unfortunately, due to copyright reasons, this video is not available in Japan)
 
-Update (2/22/2018): It occurs to me that not only is this useful for creating furigana over text, but it also can be used to add guitar chords over the lyrics of a song. In this case, the "english file" should just be empty lines and the "japanese file" should be whichever lyrics you want with the chords in the furigana positions.
+This tool doesn't only have to be used for Japanese with furigana: it can be used for any application where you want to position smaller text over other text.
 
 ## Download and Installation
 
-This project can be compiled to a .jar file using the `sbt assembly` command, which the project depends on. This .jar can then be run normally, but I prefer to move the package to a bin folder and add the following line to my .bashrc:
+This project can be compiled to a .jar file using the `sbt assembly` command, which the project depends on. 
 
-`alias lyric-create="java -jar ~/Documents/Code/bin/mv-slide-generator.jar"`
+In the command's output, it will tell you where it's put the file. In my case, it was `target\scala-2.12\MVSlideGenerator-assembly-0.1.jar`
 
-After doing so, the command can be run simply by typing:
+If you don't have `sbt` or don't know how to use it, you can download a pre-assembled version of the jar [here](https://drive.google.com/open?id=1fwNmWAa9OaZGlzbWeUAf1Qjl8yTcu7cs), but I can't guarantee the pre-assembled jar will run on all systems (though I would expect it to).
 
-`lyric-create english_in_file japanese_in_file`
+After acquiring the .jar, it can be run normally to open the application. If you have the Java Runtime Environment installed, you should be able to just double-click the file.
+
+When the application runs, it will save a settings file in your appdata directory. These settings can be manually edited, but a settings menu is on the way soon.
 
 ## Usage
 
-This tool will automatically parse an English lyric file and a Japanese lyric file, assuming each line corresponds to its translation line. It will then parse the readings for the Japanese text and format furigana over the Kanji.
+When the app is run, it will open a window that looks like this:
 
-Then, for each line, it will create a black slide with the text formatted over it. Here is an example slide:
+![new_app](https://imgur.com/gIks3YA.png)
 
-![slide_example](https://i.imgur.com/XUOIEQg.png)
+Clicking one of the "Load File" buttons on the left will allow you to pick a file containing the lines that go on the top and bottom of the image.
 
-In order to add furigana to text, just wrap any kanji like so `[Kanji|Reading]`
+![opening_text](https://imgur.com/NHvoes5.png)
+
+Once you've selected the lyric file, it will fill the text view on the left.
+
+![text_view](https://imgur.com/X1BEx6f.png)
+
+The same is true for the bottom section, but the bottom text area will allow you to add furigana to the line.
+
+If you want furigana to Japanese text, in the input file, wrap any kanji in this way: `[Kanji|Reading]`
 
 For example, the example song's Japanese lyric file contained the line:
 
-`[明|あ]け[渡|わた]してはいけない[場所|ばしょ] それを[心|こころ]と[呼|よ]ぶんでしょ`
+`アダムにとって[知恵|ちえ]の[樹|き]の[実|み]とは`
 
-This tool also features a number of additional parameters and flags. The following is an attempt at a comprehensive list:
+When you load the file, you'll know you have succeeded if the bracket-style furigana formatting isn't shown, and the characters with furigana are highlighted.
 
-```
-Usage: lyric-create <english-input-file> <japanese-input-file>
-   Command line arguments:
-     -e <font-min> <font-max> : Sets the English font size range (Default: 80 to 100)
-     -j <font-min> <font-max> : Sets the Japanese font size range (Default: 70 to 100)
-     -r <width> <height> : Sets the resulting image resolution (Default: 1920 by 1080)
-     -p <padding> : Sets the horizontal padding around lines (Default: 50 pixels)
-     -P <ppi> : Sets the ppi (Default: 72ppi)
-     -f <typeface> : Sets the typeface. See note 1 (Default: Meiryo)
-     -l <spacing> : Sets the line spacing for English text (Default: 50 pixels)
-     -F <spacing> : Sets the spacing between Kanji and Furigana (Default: 15 pixels)
-   Note 1: This application produced bolded text on slides, so if the font given does not have a bold counterpart
-   then errors or unexpected behavior may occur during rendering.
-```
+![text_view_2](https://imgur.com/TeNZhSv.png)
+
+Once you've loaded both files, clicking any of the lines will show a preview of the slide that will be created for it.
+
+![previews](https://imgur.com/r4xsnxS.png)
+
+By default, the images will use the largest font that keeps the text within the specified boundaries, but you can reduce the font size for aesthetic reasons using the font sliders below each file area.
+
+![fonts](https://imgur.com/si3G9js.png)
+
+All that's left is to specify the output path where you want the images to be saved. This can be entered manually or chosen using the directory selector. You must input something, or the app will refuse to create the images.
+
+![directories](https://imgur.com/bo43v50.png)
+
+Once that's done, just click create slides, and it will create all the images. There is a short delay of lag (~3 seconds) when creating the image. I've tried to remove the lag by creating the images in the background but there are technical reasons why that isn't possible.
+
+For each pair of lines in the input files, the app will create a black slide with the text formatted over it. Here is an example slide:
+
+![slide_example](https://imgur.com/LH7Emic.png)
+
+If you want, you can instead use a transparent background and add a white stroke to the text (good for overlaying the lyrics over some other video or image) by going into the `mv_slide_generator/properties.conf` file (in your %APPDATA% or home directory) and changing the line `transparentStroked=false` to `transparentStroke=true`, though I haven't personally tested this much.
