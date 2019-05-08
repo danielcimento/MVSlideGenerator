@@ -1,18 +1,17 @@
 package ui.images
 
-import de.jensd.fx.glyphs.GlyphIcon
 import javafx.geometry.{Insets, Pos}
-import javafx.scene.control.{Button, Label, TextField}
+import javafx.scene.control.{Button, Label}
 import javafx.scene.image.{Image, ImageView}
 import javafx.scene.layout._
 import javafx.scene.text.Font
-import javafx.stage.{DirectoryChooser, Stage}
+import javafx.stage.Stage
 import ui.{ApplicationScene, Globals}
 
 class ImageProcessingArea(parent: ApplicationScene)(implicit stage: Stage) extends VBox(10.0) {
   setPadding(new Insets(0,10,0,0))
 
-  private val labelAndSettingsBox = new HBox() {
+  private val labelAndSettingsBox: HBox = new HBox() {
     val label: Label = new Label("Slide Preview") {
       setPadding(new Insets(10, 0, 0, 5))
       setFont(Font.font(Globals.uiFont))
@@ -22,7 +21,7 @@ class ImageProcessingArea(parent: ApplicationScene)(implicit stage: Stage) exten
     HBox.setHgrow(filler, Priority.ALWAYS)
 
     val settingsButton = new Button()
-    settingsButton.setGraphic(new ImageView(new Image(getClass.getClassLoader().getResourceAsStream("cogs.png"), 24, 24, true, true)){
+    settingsButton.setGraphic(new ImageView(new Image(getClass.getClassLoader.getResourceAsStream("cogs.png"), 24, 24, true, true)){
       setPadding(new Insets(10, 5, 0, 0))
     })
 

@@ -5,16 +5,18 @@ import javafx.concurrent.Task
 import javafx.geometry.{Insets, Pos}
 import javafx.scene.control._
 import javafx.scene.layout.{HBox, Priority, VBox}
-import javafx.scene.text.{Font, TextFlow}
+import javafx.scene.text.Font
 import javafx.stage.FileChooser.ExtensionFilter
 import javafx.stage.{FileChooser, Stage}
-import model.{TextProcessor, TextRenderer}
+import model.{RunConfig, TextProcessor, TextRenderer}
 import ui.{ApplicationScene, Globals}
+
+import ui.Globals.tryWithResource
 
 import scala.collection.JavaConverters._
 import scala.io.Source
 
-class FileDisplayPane(labelText: String, val parent: ApplicationScene, allowSplitting: Boolean)(implicit stage: Stage) extends VBox(10.0) {
+class FileDisplayPane(labelText: String, val parent: ApplicationScene, allowSplitting: Boolean)(implicit stage: Stage, rc: RunConfig) extends VBox(10.0) {
   // This is the primary property that needs to be visible to the parent scene
   private val _fontSize: IntegerProperty = new SimpleIntegerProperty(0)
   def fontSize: Int = _fontSize.getValue
@@ -57,7 +59,7 @@ class FileDisplayPane(labelText: String, val parent: ApplicationScene, allowSpli
   // The row below the list of lines which allows user interaction
   val toolRow: HBox = new HBox(10.0) {
     val button: Button = new Button("Load File") {
-      setOnAction(_ => fillTextAreaWithFileContents)
+      setOnAction(_ => fillTextAreaWithFileContents())
       setFont(Font.font(Globals.uiFont))
     }
 
@@ -68,18 +70,20 @@ class FileDisplayPane(labelText: String, val parent: ApplicationScene, allowSpli
 
   getChildren.addAll(label, fileContents, toolRow)
 
-  def fillTextAreaWithFileContents: Unit = {
+  def fillTextAreaWithFileContents(): Unit = {
     val fc = new FileChooser
     fc.setTitle("Choose a lyric file.")
     fc.getExtensionFilters.add(
       new ExtensionFilter("All Files", "*.*")
     )
     val chosenFile = fc.showOpenDialog(stage)
+
     if(chosenFile != null) {
-      val lines = Source.fromFile(chosenFile, "UTF-8").getLines().toList
-      fileContents.getItems.setAll(lines: _*)
+      tryWithResource(Source.fromFile(chosenFile, "UTF-8")) { textSource =>
+        fileContents.getItems.setAll(textSource.getLines().toList: _*)
+      }
       parent.tryLinkingScrolls()
-      val maxFontSize = TextRenderer.getLargestFontSize(getLines.map(TextProcessor.partitionLinesAndReadings(_)._1), parent.rc, allowSplitting)
+      val maxFontSize = TextRenderer.getLargestFontSize(getLines.map(TextProcessor.partitionLinesAndReadings(_)._1), allowSplitting)
       fontSlider.updateMaxSize(maxFontSize)
       fontSlider.updateFont(maxFontSize)
     }
@@ -93,8 +97,11 @@ class FileDisplayPane(labelText: String, val parent: ApplicationScene, allowSpli
 
   def getNthLine(n: Int): Option[String] = {
     // Highlight the line being queried (so the user can see which lines are being rendered)
-    fileContents.getSelectionModel.select(n)
     getLines.lift(n)
+  }
+
+  def selectNthLine(n: Int): Unit = {
+      fileContents.getSelectionModel.select(n)
   }
 
   def getScrollbar: Option[ScrollBar] = {

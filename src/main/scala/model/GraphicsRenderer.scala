@@ -1,21 +1,17 @@
 package model
 
-import java.nio.file.Path
-import java.util.UUID
-
 import javafx.scene.SnapshotParameters
 import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.text.{Font, FontWeight, Text, TextAlignment}
 import RunConfig.Keys._
-import javafx.beans.property.DoubleProperty
-import javafx.scene.control.ProgressBar
+import com.typesafe.scalalogging.LazyLogging
 
 import scala.language.postfixOps
 
 object GraphicsRenderer extends GraphicsHelpers {
-  private val debug = false
+  private val bigCharacter = "国"
 
   // determines whether an english sentence can fit entirely on one line or needs to be broken up
   def canFitOnOneLine(line: String, fontSize: Int, width: Int, fontFamily: String): Boolean = {
@@ -41,7 +37,6 @@ object GraphicsRenderer extends GraphicsHelpers {
   // Gets the largest font size within a certain range that can comfortably fit in the specified area
   def getFontSizeForLine(
     line: String,
-    ppi: Int,
     availableWidth: Int,
     fontFamily: String,
     twoLines: Boolean = false
@@ -54,8 +49,8 @@ object GraphicsRenderer extends GraphicsHelpers {
       val (firstLine, secondLine) = TextProcessor.cleaveSentence(line)
 
       Math.min(
-        getFontSizeForLine(firstLine, ppi, availableWidth, fontFamily),
-        getFontSizeForLine(secondLine, ppi, availableWidth, fontFamily)
+        getFontSizeForLine(firstLine, availableWidth, fontFamily),
+        getFontSizeForLine(secondLine, availableWidth, fontFamily)
       )
     } else {
       largestIntSatisfyingPredicate(canFitOnOneLine(line, _, availableWidth, fontFamily))
@@ -65,24 +60,27 @@ object GraphicsRenderer extends GraphicsHelpers {
   def renderFuriganaFragment(
     textWithReading: TextWithReading,
     fontSize: Int,
-    spacing: Int,
-    ppi: Int,
-    fontFamily: String,
-    transparentBolded: Boolean
-  ): Image = {
+    isPreview: Boolean,
+  )(implicit rc: RunConfig): Image = {
+    val (spacing, fontFamily, transparentBolded) = (rc.getInt(FURIGANA_SPACING), rc.getString(FONT_FAMILY), rc.getBool(TRANSPARENT_STROKED))
+    val opacity = if(isPreview) 0.5 else 1.0
 
     val bigFont = Font.font(fontFamily, FontWeight.BOLD, fontSize)
     val smallFont = Font.font(fontFamily, FontWeight.BOLD, fontSize / 2)
 
     textWithReading match {
-      case TextWithReading(txt, reading) =>
+      case TextWithReading(baseText, reading) =>
 
-        val (baseWidth, baseHeight) = getTextDimensions(txt, bigFont)
+        val (baseWidth, baseHeight) = if(baseText != "") {
+          getTextDimensions(baseText, bigFont)
+        } else {
+          getTextDimensions(bigCharacter, bigFont)
+        }
         // We don't know if the reading includes furigana, so we just fake it with the base text.
         val (readingWidth, readingHeight) = if(reading != "") {
           getTextDimensions(reading, smallFont)
         } else {
-          getTextDimensions(txt, smallFont)
+          getTextDimensions(bigCharacter, smallFont)
         }
 
         val widthOfCanvas = Math.max(
@@ -90,7 +88,7 @@ object GraphicsRenderer extends GraphicsHelpers {
           readingWidth
         )
 
-        logger.debug("The width of %s and %s are %1.2f and %1.2f, so canvas width is %1.2f".format(txt, reading, baseWidth, readingWidth, widthOfCanvas))
+        logger.debug("The width of %s and %s are %1.2f and %1.2f, so canvas width is %1.2f".format(baseText, reading, baseWidth, readingWidth, widthOfCanvas))
 
         // TODO: Work out weird constant multiplication? Probably has something to do with DPI, but I have no idea why (or glyph height to width ratio)
         val heightScalingFactor = getFontHeightToWidthRatio(bigFont)
@@ -99,24 +97,24 @@ object GraphicsRenderer extends GraphicsHelpers {
 
         val heightOfCanvas = scaledFuriganaHeight + scaledBaseHeight + spacing
 
-        logger.debug("The height of the fragment (%s) is %1.2f, since the reading height, text height, and spacing are %1.2f, %1.2f, %d".format(txt, heightOfCanvas, readingHeight, baseHeight, spacing))
+        logger.debug("The height of the fragment (%s) is %1.2f, since the reading height, text height, and spacing are %1.2f, %1.2f, %d".format(baseText, heightOfCanvas, readingHeight, baseHeight, spacing))
 
         implicit val canvasForText: Canvas = new Canvas(widthOfCanvas, heightOfCanvas)
 
         // The Kanji extend around 5 pixels from the base line of the font
         val baseYPosition = scaledFuriganaHeight + spacing + scaledBaseHeight - 6
-        writeTextToCanvas(txt, canvasForText.getWidth / 2, baseYPosition, transparentBolded)(canvasForText, bigFont)
+        writeTextToCanvas(baseText, canvasForText.getWidth / 2, baseYPosition, transparentBolded)(canvasForText, bigFont)
 
         val readingYPosition = scaledFuriganaHeight
         writeTextToCanvas(reading, canvasForText.getWidth / 2, readingYPosition, transparentBolded)(canvasForText, smallFont)
 
-        takePictureOfCanvas
+        takePictureOfCanvas(canvasForText, opacity)
     }
   }
 
-  def joinFuriganaFragments(listOfFragments: List[(TextWithReading, Image)], fontSize: Int, fontFamily: String): Image = {
-    val font = Font.font(fontFamily, FontWeight.BOLD, fontSize)
-    val smallFont = Font.font(fontFamily, FontWeight.BOLD, fontSize / 2)
+  def joinFuriganaFragments(listOfFragments: List[(TextWithReading, Image)], fontSize: Int)(implicit rc: RunConfig): Image = {
+    val font = Font.font(rc.getString(FONT_FAMILY), FontWeight.BOLD, fontSize)
+//    val smallFont = Font.font(fontFamily, FontWeight.BOLD, fontSize / 2)
 
     listOfFragments match {
       // Special case on lines without Furigana
@@ -145,21 +143,28 @@ object GraphicsRenderer extends GraphicsHelpers {
 
 
             gc.drawImage(firstImg, 0.0, 0.0)
-
-            // The starting x position for the middle element's base text to align on requires a calculation depending on whether the base or furigana was larger
-            var startingXForMiddle: Double = if(firstTextWidth > getTextWidth(firstText.reading, smallFont)) {
-              firstTextWidth
-            } else {
-              firstTextWidth + firstFuriganaOverhang
+            listOfFragments.tail.foldLeft(firstFuriganaOverhang + firstTextWidth) {
+              case (xPosition, (textWithReading, image)) =>
+                val baseWidth = getTextWidth(textWithReading.baseText, font)
+                val overhang = (image.getWidth - baseWidth) / 2
+                gc.drawImage(image, xPosition - overhang, 0.0)
+                xPosition + baseWidth
             }
 
-            (middle :+ last).foreach {
-              case (txt, img) =>
-                val strWidth = getTextWidth(txt.baseText, font)
-                val overhang = (img.getWidth - strWidth) / 2
-                gc.drawImage(img, startingXForMiddle - overhang, 0)
-                startingXForMiddle += strWidth
-            }
+//            // The starting x position for the middle element's base text to align on requires a calculation depending on whether the base or furigana was larger
+//            var startingXForMiddle: Double = if(firstTextWidth > getTextWidth(firstText.reading, smallFont)) {
+//              firstTextWidth
+//            } else {
+//              firstTextWidth + firstFuriganaOverhang
+//            }
+//
+//            (middle :+ last).foreach {
+//              case (txt, img) =>
+//                val strWidth = getTextWidth(txt.baseText, font)
+//                val overhang = (img.getWidth - strWidth) / 2
+//                gc.drawImage(img, startingXForMiddle - overhang, 0)
+//                startingXForMiddle += strWidth
+//            }
 
             takePictureOfCanvas
         }
@@ -171,11 +176,11 @@ object GraphicsRenderer extends GraphicsHelpers {
     val (canvasWidth, canvasHeight) = (images.map(_.getWidth).max, images.map(_.getHeight).sum + (spacing * (images.length - 1)))
     implicit val canvas: Canvas = new Canvas(canvasWidth, canvasHeight)
     val gc = canvas.getGraphicsContext2D
-    images.zipWithIndex foreach {
-      case(image, index) =>
+    images.foldLeft(0.0) { (accHeight, image) =>
         val imageXPos = (canvasWidth - image.getWidth) / 2
-        val imageYPos = (image.getHeight + spacing) * index
+        val imageYPos = accHeight
         gc.drawImage(image, imageXPos, imageYPos)
+        accHeight + image.getHeight + spacing
     }
     takePictureOfCanvas
   }
@@ -203,11 +208,14 @@ object GraphicsRenderer extends GraphicsHelpers {
     }
   }
 
-  def paintText(topText: Image, bottomText: Image, xDimension: Int, yDimension: Int, ppi: Int, transparentStroked: Boolean): Image = {
+  def paintText(topText: Image, bottomText: Image, previewText: Option[Image], rc: RunConfig): Image = {
+    // Unpack run config
+    val (xDimension, yDimension) = (rc.getInt(RESOLUTION_WIDTH), rc.getInt(RESOLUTION_HEIGHT))
+
     implicit val canvas: Canvas = new Canvas(xDimension, yDimension)
     val gc = canvas.getGraphicsContext2D
 
-    if(transparentStroked) {
+    if(rc.getBool(TRANSPARENT_STROKED)) {
       gc.setFill(Color.TRANSPARENT)
     } else {
       gc.setFill(Color.BLACK)
@@ -216,35 +224,43 @@ object GraphicsRenderer extends GraphicsHelpers {
 
     val thirdOfHeight = yDimension / 3
 
-    val topYPosition = (thirdOfHeight - topText.getHeight) / 2
-    val bottomYPosition = (thirdOfHeight * 2) + ((thirdOfHeight - bottomText.getHeight) / 2)
-
     val topXPosition = (xDimension - topText.getWidth) / 2
-    val bottomXPosition = (xDimension - bottomText.getWidth) / 2
-
+    val topYPosition = (thirdOfHeight - topText.getHeight) / 2
     gc.drawImage(topText, topXPosition, topYPosition)
-    gc.drawImage(bottomText, bottomXPosition, bottomYPosition)
+
+    val bottomImage: Image = previewText match {
+      case None => bottomText
+      case Some(img) => stackImagesWithSpacing(List(bottomText, img), rc.getInt(FURIGANA_SPACING))
+    }
+
+    val bottomXPosition = (xDimension - bottomImage.getWidth) / 2
+    val bottomYPosition = yDimension - bottomImage.getHeight - rc.getInt(LINE_SPACING)
+    gc.drawImage(bottomImage, bottomXPosition, bottomYPosition)
 
     takePictureOfCanvas
   }
 
-  def convertLinesToImage(englishLine: String, japaneseLine: String, engFontSize: Int, jpFontSize: Int, rc: RunConfig): Image = {
-    val japaneseImage = TextRenderer.convertJapaneseLineToImage(japaneseLine, jpFontSize, rc)
-    val englishImage = TextRenderer.convertEnglishLineToImage(englishLine, engFontSize, rc)
-    paintText(englishImage, japaneseImage, rc.getInt(RESOLUTION_WIDTH), rc.getInt(RESOLUTION_HEIGHT), rc.getInt(PPI), rc.getBool(TRANSPARENT_STROKED))
+  def convertLinesToImage(englishLine: String, japaneseLineAndPreview: (String, String), engFontSize: Int, jpFontSize: Int)(implicit rc: RunConfig): Image = {
+    val (japaneseImage, previewImage) = japaneseLineAndPreview match {
+      case (line, preview) if rc.getBool(WITH_PREVIEW_LINE) =>
+        val f: (String, Boolean) => Image = TextRenderer.convertJapaneseLineToImage(_, jpFontSize, _)
+        (f(line, false), Some(f(preview, true)))
+      case (line, _) => (TextRenderer.convertJapaneseLineToImage(line, jpFontSize), None)
+    }
+    val englishImage = TextRenderer.convertEnglishLineToImage(englishLine, engFontSize)
+    paintText(englishImage, japaneseImage, previewImage, rc)
   }
 
-  def createAllImages(japaneseLines: List[String], englishLines: List[String], jpFontSize: Int, engFontSize: Int, rc: RunConfig): List[Image] = {
-    val linePairs = englishLines.zipAll(japaneseLines, "", "")
-    linePairs.map { case (eL, jL) => convertLinesToImage(eL, jL, engFontSize, jpFontSize, rc) }
+  def createAllImages(japaneseLines: List[String], englishLines: List[String], jpFontSize: Int, engFontSize: Int)(implicit rc: RunConfig): List[Image] = {
+    // TODO: Fix weird nesting of tuples
+    val linePairs: List[(String, (String, String))] = englishLines.zipAll(japaneseLines.zipAll(japaneseLines.tail, "", ""), "", ("", ""))
+    linePairs.map { case (eL, jL) => convertLinesToImage(eL, jL, engFontSize, jpFontSize) }
   }
 
 
 }
 
-trait GraphicsHelpers {
-  protected val logger = GlobalContext.logger
-
+trait GraphicsHelpers extends LazyLogging {
   def getFontHeightToWidthRatio(font: Font): Double = {
     val (w, h) = getTextDimensions("世", font)
     w / h
@@ -261,7 +277,8 @@ trait GraphicsHelpers {
     (bounds.getWidth, bounds.getHeight)
   }
 
-  def takePictureOfCanvas(implicit canvas: Canvas, fill: Color = Color.TRANSPARENT): Image = {
+  def takePictureOfCanvas(implicit canvas: Canvas, opacity: Double = 1.0, fill: Color = Color.TRANSPARENT): Image = {
+    canvas.setOpacity(opacity)
     val snapshotParameters = new SnapshotParameters
     snapshotParameters.setFill(fill)
     canvas.snapshot(snapshotParameters, null)

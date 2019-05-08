@@ -1,19 +1,16 @@
 package ui
 
-import javafx.application.Platform
 import javafx.beans.property.DoubleProperty
 import javafx.concurrent.Task
-import javafx.scene.Scene
 import javafx.scene.control.Alert.AlertType
-import javafx.scene.control.{Alert, ButtonType, ProgressBar}
-import javafx.scene.image.Image
+import javafx.scene.control.{Alert, ButtonType}
 import javafx.scene.layout.{ColumnConstraints, GridPane, Priority, RowConstraints}
 import javafx.stage.Stage
 import model._
 import ui.files.FileDisplayPane
 import ui.images.ImageProcessingArea
 
-class ApplicationScene(val rc: RunConfig)(implicit stage: Stage) extends GridPane {
+class ApplicationScene(implicit stage: Stage, rc: RunConfig) extends GridPane {
   // Defines the line of the input files which we want to render a preview of
   private var currentPreview = -1
 
@@ -46,9 +43,11 @@ class ApplicationScene(val rc: RunConfig)(implicit stage: Stage) extends GridPan
 
   // If we have a line selected by the user, try to render a preview image for it
   def renderPreviewImage(): Unit = {
-    (englishFileArea.getNthLine(currentPreview), japaneseFileArea.getNthLine(currentPreview)) match {
-      case (Some(englishLine), Some(japaneseLine)) =>
-        val previewImage = GraphicsRenderer.convertLinesToImage(englishLine, japaneseLine, englishFileArea.fontSize, japaneseFileArea.fontSize, rc)
+    englishFileArea.selectNthLine(currentPreview)
+    japaneseFileArea.selectNthLine(currentPreview)
+    (englishFileArea.getNthLine(currentPreview), japaneseFileArea.getNthLine(currentPreview), japaneseFileArea.getNthLine(currentPreview + 1)) match {
+      case (Some(englishLine), Some(japaneseLine), preview@_) =>
+        val previewImage = GraphicsRenderer.convertLinesToImage(englishLine, (japaneseLine, preview.getOrElse("")), englishFileArea.fontSize, japaneseFileArea.fontSize)
         imageProcessingArea.updatePreviewImage(previewImage)
       // If we couldn't find the line in question, but the user did select something, we display a warning
       case _ if currentPreview != -1 => imageProcessingArea.displayWarning()
@@ -78,7 +77,7 @@ class ApplicationScene(val rc: RunConfig)(implicit stage: Stage) extends GridPan
       // prompt confirmation if lines are mismatched.
       def execute(): Unit = {
         // Render all the images (needs to be on the same thread since we're using JavaFX assets)
-        val images = GraphicsRenderer.createAllImages(japaneseFileArea.getLines, englishFileArea.getLines, japaneseFileArea.fontSize, englishFileArea.fontSize, rc)
+        val images = GraphicsRenderer.createAllImages(japaneseFileArea.getLines, englishFileArea.getLines, japaneseFileArea.fontSize, englishFileArea.fontSize)(rc)
         // Then, create a background task to write all those files to the disk, updating the progress parameter as it goes
         val saveImages = new Task[Unit]() {
           override def call(): Unit = {

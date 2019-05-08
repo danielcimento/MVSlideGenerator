@@ -1,8 +1,6 @@
 package ui.files
 
 import javafx.beans.binding.Bindings
-import javafx.beans.property.SimpleListProperty
-import javafx.collections.{ListChangeListener, ObservableArray}
 import javafx.scene.control.{ListCell, ListView, Tooltip}
 import javafx.scene.paint.Color
 import javafx.scene.text.{Font, Text, TextFlow}

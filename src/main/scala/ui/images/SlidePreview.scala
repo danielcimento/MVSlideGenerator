@@ -1,7 +1,7 @@
 package ui.images
 
 import javafx.scene.image.{Image, ImageView}
-import javafx.scene.layout.{Priority, StackPane, VBox}
+import javafx.scene.layout.{StackPane, VBox}
 import javafx.scene.paint.Color
 import javafx.scene.text.{Font, Text}
 

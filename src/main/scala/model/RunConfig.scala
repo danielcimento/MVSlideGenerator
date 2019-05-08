@@ -3,16 +3,26 @@ package model
 import java.io._
 import java.util.Properties
 
+import com.typesafe.scalalogging.LazyLogging
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.util.Try
 
-case class RunConfig(properties: mutable.Map[String, String]) {
-  def updateProperty[A](setting: String, value: A): A = {
-    properties.put(setting, value.toString)
-    // TODO: Save new property
-    value
+class RunConfig(properties: mutable.Map[String, String], propertiesFile: Option[File]) {
+  def updateProperty[A](setting: String, newValue: A): A = {
+    properties.put(setting, newValue.toString)
+    // Save the new property
+    propertiesFile match {
+      case Some(propFile) =>
+        val fos = new OutputStreamWriter(new FileOutputStream(propFile), "UTF-8")
+        val props = new Properties()
+        properties.foreach({ case (key, value) => props.setProperty(key, value.toString) })
+        props.store(fos, null)
+        fos.close()
+      case None => // no-op
+    }
+    newValue
   }
 
   def getInt(setting: String): Int = {
@@ -46,9 +56,8 @@ case class RunConfig(properties: mutable.Map[String, String]) {
   }
 }
 
-object RunConfig {
+object RunConfig extends LazyLogging {
   object Keys {
-    val PPI = "ppi"
     val RESOLUTION_WIDTH = "resolutionWidth"
     val RESOLUTION_HEIGHT = "resolutionHeight"
     val HORIZONTAL_PADDING = "horizontalPadding"
@@ -56,12 +65,12 @@ object RunConfig {
     val LINE_SPACING = "lineSpacing"
     val FURIGANA_SPACING = "furiganaSpacing"
     val TRANSPARENT_STROKED = "transparentStroked"
+    val WITH_PREVIEW_LINE = "includePreviewLine"
     val MIN_FONT_BEFORE_CLEAVE = "minFontBeforeCleave"
   }
 
   import Keys._
   private val defaultSettings = Map(
-    PPI -> 72,
     RESOLUTION_WIDTH -> 1920,
     RESOLUTION_HEIGHT -> 1080,
     HORIZONTAL_PADDING -> 50,
@@ -70,14 +79,15 @@ object RunConfig {
     FURIGANA_SPACING -> 15,
     TRANSPARENT_STROKED -> false,
     // TODO: Experiment with this value
-    MIN_FONT_BEFORE_CLEAVE -> 70
+    MIN_FONT_BEFORE_CLEAVE -> 70,
+    WITH_PREVIEW_LINE -> false
   )
 
-  def getUserConfig(): RunConfig = {
+  def getUserConfig: RunConfig = {
     try {
       val props = new Properties()
       val propFile = new File(new File(getUserAppDataFolder), "mv_slide_generator/properties.conf")
-      println(propFile.getAbsolutePath)
+      logger.debug(s"Getting run config from: ${propFile.getAbsolutePath}")
       propFile.getParentFile.mkdirs
       if(!propFile.exists()) {
         propFile.createNewFile()
@@ -85,15 +95,15 @@ object RunConfig {
         defaultSettings.foreach({ case (key, value) => props.setProperty(key, value.toString) })
         props.store(fos, null)
         fos.close()
-        RunConfig(props.asScala)
+        new RunConfig(props.asScala, Some(propFile))
       } else {
         val fis = new InputStreamReader(new FileInputStream(propFile), "UTF-8")
         props.load(fis)
         fis.close()
-        RunConfig(props.asScala)
+        new RunConfig(props.asScala, Some(propFile))
       }
     } catch {
-      case _: FileNotFoundException => RunConfig(mutable.Map())
+      case _: FileNotFoundException => new RunConfig(mutable.Map(), None)
     }
   }
 
