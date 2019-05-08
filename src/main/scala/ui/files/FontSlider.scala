@@ -5,7 +5,6 @@ import javafx.geometry.Pos
 import javafx.scene.control.{Label, Slider}
 import javafx.scene.layout.{HBox, Priority}
 import javafx.scene.text.Font
-import ui.Globals
 
 // A widget that holds a font value and shows a label displaying that font's value
 class FontSlider extends HBox {

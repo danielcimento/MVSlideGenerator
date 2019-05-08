@@ -29,14 +29,12 @@ object TextRenderer extends LazyLogging {
 //    japaneseLines.map(convertJapaneseLineToImage(_, jpFontSize, rc))
 //  }
 
-  // TODO: Implicit rc and rc passing
   def convertJapaneseLineToImage(japaneseLine: String, fontSize: Int, isPreview: Boolean = false)(implicit rc: RunConfig): Image = {
     // First, we divide each Japanese line into a (line, readings) pair,
     // where the readings are the chunks of (Kanji + Furigana) or (Kana + EmptyString)
     // and the line is the original line with the furigana formatting removed (i.e. the whole "base line" of text)
     // Next, we build the images of the Japanese text. To do so, we turn each (Kanji, Reading) pair into a slice of the
     // sentence. We put together all the slices, taking into account overhang
-    // TODO: Tweak scaling
     val effectiveFontSize = if(!isPreview) fontSize else (fontSize * 0.75).toInt
     TextProcessor.partitionLinesAndReadings(japaneseLine) match {
       case (_, textAndFurigana) if textAndFurigana.nonEmpty =>

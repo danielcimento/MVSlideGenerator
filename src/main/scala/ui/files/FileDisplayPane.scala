@@ -9,9 +9,7 @@ import javafx.scene.text.Font
 import javafx.stage.FileChooser.ExtensionFilter
 import javafx.stage.{FileChooser, Stage}
 import model.{RunConfig, TextProcessor, TextRenderer}
-import ui.{ApplicationScene, Globals}
-
-import ui.Globals.tryWithResource
+import ui.ApplicationScene
 
 import scala.collection.JavaConverters._
 import scala.io.Source

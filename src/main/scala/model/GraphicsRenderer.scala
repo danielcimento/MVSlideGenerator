@@ -7,6 +7,7 @@ import javafx.scene.paint.Color
 import javafx.scene.text.{Font, FontWeight, Text, TextAlignment}
 import RunConfig.Keys._
 import com.typesafe.scalalogging.LazyLogging
+import Globals.RichBoolean
 
 import scala.language.postfixOps
 
@@ -90,7 +91,6 @@ object GraphicsRenderer extends GraphicsHelpers {
 
         logger.debug("The width of %s and %s are %1.2f and %1.2f, so canvas width is %1.2f".format(baseText, reading, baseWidth, readingWidth, widthOfCanvas))
 
-        // TODO: Work out weird constant multiplication? Probably has something to do with DPI, but I have no idea why (or glyph height to width ratio)
         val heightScalingFactor = getFontHeightToWidthRatio(bigFont)
         val scaledFuriganaHeight: Double =  readingHeight * heightScalingFactor
         val scaledBaseHeight = baseHeight * heightScalingFactor
@@ -240,24 +240,18 @@ object GraphicsRenderer extends GraphicsHelpers {
     takePictureOfCanvas
   }
 
-  def convertLinesToImage(englishLine: String, japaneseLineAndPreview: (String, String), engFontSize: Int, jpFontSize: Int)(implicit rc: RunConfig): Image = {
-    val (japaneseImage, previewImage) = japaneseLineAndPreview match {
-      case (line, preview) if rc.getBool(WITH_PREVIEW_LINE) =>
-        val f: (String, Boolean) => Image = TextRenderer.convertJapaneseLineToImage(_, jpFontSize, _)
-        (f(line, false), Some(f(preview, true)))
-      case (line, _) => (TextRenderer.convertJapaneseLineToImage(line, jpFontSize), None)
-    }
+  def convertLinesToImage(englishLine: String, japaneseLine: String, japaneseLinePreview: String, engFontSize: Int, jpFontSize: Int)(implicit rc: RunConfig): Image = {
+    // Using the RichBoolean implicit in our globals
+    val previewImage = rc.getBool(WITH_PREVIEW_LINE).option(TextRenderer.convertJapaneseLineToImage(japaneseLinePreview, jpFontSize))
+    val japaneseImage = TextRenderer.convertJapaneseLineToImage(japaneseLine, jpFontSize)
     val englishImage = TextRenderer.convertEnglishLineToImage(englishLine, engFontSize)
     paintText(englishImage, japaneseImage, previewImage, rc)
   }
 
   def createAllImages(japaneseLines: List[String], englishLines: List[String], jpFontSize: Int, engFontSize: Int)(implicit rc: RunConfig): List[Image] = {
-    // TODO: Fix weird nesting of tuples
-    val linePairs: List[(String, (String, String))] = englishLines.zipAll(japaneseLines.zipAll(japaneseLines.tail, "", ""), "", ("", ""))
-    linePairs.map { case (eL, jL) => convertLinesToImage(eL, jL, engFontSize, jpFontSize) }
+    val linePairs: List[(String, String, String)] = (englishLines, japaneseLines, japaneseLines.tail ++ List("")).zipped.toList
+    linePairs.map { case (eL, jL, preview) => convertLinesToImage(eL, jL, preview, engFontSize, jpFontSize) }
   }
-
-
 }
 
 trait GraphicsHelpers extends LazyLogging {

@@ -5,7 +5,6 @@ import javafx.scene.control.{Button, Label, TextField}
 import javafx.scene.layout.{HBox, Priority}
 import javafx.scene.text.Font
 import javafx.stage.{DirectoryChooser, Stage}
-import ui.Globals
 
 // A nice little encapsulated class that has a label, a text field, and a button which allows users to search for their desired directory
 class OutputPathSelection(implicit stage: Stage) extends HBox(10.0) {

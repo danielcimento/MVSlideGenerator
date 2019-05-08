@@ -1,6 +1,10 @@
 package model
 
-object GlobalContext {
+object Globals {
+  implicit class RichBoolean(val b: Boolean) extends AnyVal {
+    final def option[A](a: => A): Option[A] = if (b) Some(a) else None
+  }
+
   lazy val usage: String =
     """
       |Usage: mvsg <english-input-file> <japanese-input-file>
