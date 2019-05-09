@@ -47,7 +47,7 @@ class ApplicationScene(implicit stage: Stage, rc: RunConfig) extends GridPane {
     japaneseFileArea.selectNthLine(currentPreview)
     (englishFileArea.getNthLine(currentPreview), japaneseFileArea.getNthLine(currentPreview), japaneseFileArea.getNthLine(currentPreview + 1)) match {
       case (Some(englishLine), Some(japaneseLine), preview@_) =>
-        val previewImage = GraphicsRenderer.convertLinesToImage(englishLine, (japaneseLine, preview.getOrElse("")), englishFileArea.fontSize, japaneseFileArea.fontSize)
+        val previewImage = GraphicsRenderer.convertLinesToImage(englishLine, japaneseLine, preview.getOrElse(""), englishFileArea.fontSize, japaneseFileArea.fontSize)
         imageProcessingArea.updatePreviewImage(previewImage)
       // If we couldn't find the line in question, but the user did select something, we display a warning
       case _ if currentPreview != -1 => imageProcessingArea.displayWarning()

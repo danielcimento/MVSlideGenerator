@@ -16,7 +16,7 @@ object Main extends App {
     // We use JavaFX application procedures, since we need to initialize the graphics context
     override def start(primaryStage: Stage): Unit = {
       implicit val mainStage: Stage = primaryStage
-      implicit val rc: RunConfig = model.RunConfig.getUserConfig()
+      implicit val rc: RunConfig = model.RunConfig.getUserConfig
 
       val defaultScene: Scene = new Scene(new ApplicationScene, 1920, 1080)
       primaryStage.setScene(defaultScene)

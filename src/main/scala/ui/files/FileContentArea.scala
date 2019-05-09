@@ -5,6 +5,7 @@ import javafx.scene.control.{ListCell, ListView, Tooltip}
 import javafx.scene.paint.Color
 import javafx.scene.text.{Font, Text, TextFlow}
 import model.{TextProcessor, TextWithReading}
+import ui.Globals
 
 class FileContentArea(onClickListener: Int => Unit) extends ListView[String] {
   setEditable(false)

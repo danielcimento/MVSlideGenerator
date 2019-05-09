@@ -6,7 +6,7 @@ import javafx.scene.image.{Image, ImageView}
 import javafx.scene.layout._
 import javafx.scene.text.Font
 import javafx.stage.Stage
-import ui.ApplicationScene
+import ui.{ApplicationScene, Globals}
 
 class ImageProcessingArea(parent: ApplicationScene)(implicit stage: Stage) extends VBox(10.0) {
   setPadding(new Insets(0,10,0,0))
