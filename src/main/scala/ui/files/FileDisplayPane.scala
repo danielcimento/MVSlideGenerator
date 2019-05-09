@@ -1,5 +1,7 @@
 package ui.files
 
+import java.io.File
+
 import javafx.beans.property.{IntegerProperty, ListProperty, SimpleIntegerProperty, SimpleListProperty}
 import javafx.concurrent.Task
 import javafx.geometry.{Insets, Pos}
@@ -11,6 +13,7 @@ import javafx.stage.{FileChooser, Stage}
 import model.{RunConfig, TextProcessor, TextRenderer}
 import ui.{ApplicationScene, Globals}
 import ui.Globals.tryWithResource
+import model.RunConfig.Keys._
 
 import scala.collection.JavaConverters._
 import scala.io.Source
@@ -75,8 +78,18 @@ class FileDisplayPane(labelText: String, val parent: ApplicationScene, allowSpli
     fc.getExtensionFilters.add(
       new ExtensionFilter("All Files", "*.*")
     )
-    val chosenFile = fc.showOpenDialog(stage)
+    var lastDirectory = new File(rc.getString(LAST_OPENED_DIRECTORY))
+    while(!lastDirectory.isDirectory) {
+      lastDirectory = lastDirectory.getParentFile
+    }
+    if(lastDirectory != null) {
+      fc.setInitialDirectory(lastDirectory)
+      if(lastDirectory.getAbsolutePath != rc.getString(LAST_OPENED_DIRECTORY)) {
+        rc.updateProperty(LAST_OPENED_DIRECTORY, lastDirectory.getAbsolutePath)
+      }
+    }
 
+    val chosenFile = fc.showOpenDialog(stage)
     if(chosenFile != null) {
       tryWithResource(Source.fromFile(chosenFile, "UTF-8")) { textSource =>
         fileContents.getItems.setAll(textSource.getLines().toList: _*)
@@ -85,6 +98,13 @@ class FileDisplayPane(labelText: String, val parent: ApplicationScene, allowSpli
       val maxFontSize = TextRenderer.getLargestFontSize(getLines.map(TextProcessor.partitionLinesAndReadings(_)._1), allowSplitting)
       fontSlider.updateMaxSize(maxFontSize)
       fontSlider.updateFont(maxFontSize)
+
+      if(chosenFile.isFile) {
+        val pathToSave = chosenFile.getParent
+        if(pathToSave != null) {
+          rc.updateProperty(LAST_OPENED_DIRECTORY, pathToSave)
+        }
+      }
     }
   }
 

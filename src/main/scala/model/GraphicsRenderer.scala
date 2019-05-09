@@ -242,7 +242,7 @@ object GraphicsRenderer extends GraphicsHelpers {
 
   def convertLinesToImage(englishLine: String, japaneseLine: String, japaneseLinePreview: String, engFontSize: Int, jpFontSize: Int)(implicit rc: RunConfig): Image = {
     // Using the RichBoolean implicit in our globals
-    val previewImage = rc.getBool(WITH_PREVIEW_LINE).option(TextRenderer.convertJapaneseLineToImage(japaneseLinePreview, jpFontSize))
+    val previewImage = rc.getBool(WITH_PREVIEW_LINE).option(TextRenderer.convertJapaneseLineToImage(japaneseLinePreview, jpFontSize, isPreview = true))
     val japaneseImage = TextRenderer.convertJapaneseLineToImage(japaneseLine, jpFontSize)
     val englishImage = TextRenderer.convertEnglishLineToImage(englishLine, engFontSize)
     paintText(englishImage, japaneseImage, previewImage, rc)

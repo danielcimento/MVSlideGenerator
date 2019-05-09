@@ -67,6 +67,7 @@ object RunConfig extends LazyLogging {
     val TRANSPARENT_STROKED = "transparentStroked"
     val WITH_PREVIEW_LINE = "includePreviewLine"
     val MIN_FONT_BEFORE_CLEAVE = "minFontBeforeCleave"
+    val LAST_OPENED_DIRECTORY = "lastOpenedDirectory"
   }
 
   import Keys._
@@ -80,7 +81,8 @@ object RunConfig extends LazyLogging {
     TRANSPARENT_STROKED -> false,
     // TODO: Experiment with this value
     MIN_FONT_BEFORE_CLEAVE -> 70,
-    WITH_PREVIEW_LINE -> false
+    WITH_PREVIEW_LINE -> false,
+    LAST_OPENED_DIRECTORY -> ""
   )
 
   def getUserConfig: RunConfig = {
