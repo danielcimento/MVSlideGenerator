@@ -63,11 +63,11 @@ object TextRenderer extends LazyLogging {
     // First, we see if any line is big enough to warrant using two lines
     val availableScreenWidth = rc.getInt(RESOLUTION_WIDTH) - 2 * rc.getInt(HORIZONTAL_PADDING)
 
-    if(GraphicsRenderer.canFitOnOneLine(englishLine, fontSize, availableScreenWidth, rc.getString(FONT_FAMILY))) {
-      GraphicsRenderer.renderEnglishTextLine(englishLine, fontSize, rc.getString(FONT_FAMILY), rc.getInt(LINE_SPACING), rc.getBool(TRANSPARENT_STROKED))
-    } else {
+    if(!GraphicsRenderer.canFitOnOneLine(englishLine, fontSize, availableScreenWidth, rc.getString(FONT_FAMILY)) || englishLine.contains("\\")) {
       val (topLine, botLine) = TextProcessor.cleaveSentence(englishLine)
       GraphicsRenderer.renderEnglishTextLine(topLine, fontSize, rc.getString(FONT_FAMILY), rc.getInt(LINE_SPACING), rc.getBool(TRANSPARENT_STROKED), Some(botLine))
+    } else {
+      GraphicsRenderer.renderEnglishTextLine(englishLine, fontSize, rc.getString(FONT_FAMILY), rc.getInt(LINE_SPACING), rc.getBool(TRANSPARENT_STROKED))
     }
   }
 }

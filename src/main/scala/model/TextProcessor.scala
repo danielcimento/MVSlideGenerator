@@ -39,8 +39,8 @@ object TextProcessor {
     * @return A tuple containing the first half of the sentence and the bottom half of the sentence
     */
   def cleaveSentence(sentence: String): (String, String) = {
-    if(sentence.contains("\\")) {
-      val halves = sentence.split("\\")
+    if(sentence.contains('\\')) {
+      val halves = sentence.split('\\')
       return (halves(0).trim, halves(1).trim)
     }
 
