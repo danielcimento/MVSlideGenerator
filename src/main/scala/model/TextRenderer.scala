@@ -52,7 +52,7 @@ object TextRenderer extends LazyLogging {
     // into two lines. Once we have each one calculated, we take the min, so that all can have the same size.
     val engFontSize: Int = getLargestFontSize(englishLines, considerSplitting = true)
 
-    logger.debug(s"Decided on font size $engFontSize.")
+    logger.info(s"Decided on font size $engFontSize.")
 
     // Next, we create the English translation images. The way we do so is by cleaving our sentence (if our chosen font
     // size requires it) and rendering the top and bottom lines above each other.

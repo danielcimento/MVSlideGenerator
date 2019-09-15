@@ -67,4 +67,8 @@ class ImageProcessingArea(parent: ApplicationScene)(implicit stage: Stage, rc: R
   def displayWarning(): Unit = {
     slidePreview.blank("Could not find corresponding lines in both files, so no preview can be rendered.")
   }
+
+  def clearOutputPath(): Unit = {
+    outputPathSelection.clear()
+  }
 }

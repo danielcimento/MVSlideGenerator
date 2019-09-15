@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.geometry.Insets?>
+
+<HBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.error.Controller"
+      alignment="center" spacing="5">
+    <children>
+        <Button text="Do something safe" onAction="#safeHandler" />
+        <Button text="Do something risky" onAction="#riskyHandler" />
+        <Label fx:id="label" />
+    </children>
+    <padding>
+        <Insets top="10" left="10" right="10" bottom="10" />
+    </padding>
+</HBox>

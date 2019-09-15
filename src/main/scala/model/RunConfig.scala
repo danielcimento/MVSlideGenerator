@@ -9,7 +9,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.util.Try
 
-class RunConfig(properties: mutable.Map[String, String], propertiesFile: Option[File]) {
+case class RunConfig(properties: mutable.Map[String, String], propertiesFile: Option[File]) {
   def updateProperty[A](setting: String, newValue: A): A = {
     properties.put(setting, newValue.toString)
     // Save the new property
@@ -37,7 +37,7 @@ class RunConfig(properties: mutable.Map[String, String], propertiesFile: Option[
 
   def getString(setting: String): String = {
     properties.get(setting) match {
-      case Some(s) => s
+      case Some(s) => if(s == null) "" else s
       case _ => RunConfig.defaultSettings.get(setting) match {
         case Some(s: String) => updateProperty(setting, s)
         case _ => throw new IllegalArgumentException(s"$setting should not be handled as a string!")
@@ -89,7 +89,7 @@ object RunConfig extends LazyLogging {
     try {
       val props = new Properties()
       val propFile = new File(new File(getUserAppDataFolder), "mv_slide_generator/properties.conf")
-      logger.debug(s"Getting run config from: ${propFile.getAbsolutePath}")
+      logger.info(s"Getting run config from: ${propFile.getAbsolutePath}")
       propFile.getParentFile.mkdirs
       if(!propFile.exists()) {
         propFile.createNewFile()

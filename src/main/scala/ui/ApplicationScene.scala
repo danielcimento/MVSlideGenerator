@@ -114,4 +114,8 @@ class ApplicationScene(implicit stage: Stage, rc: RunConfig) extends GridPane {
     japaneseFileArea.reset()
     imageProcessingArea.reset()
   }
+
+  def clearOutputPath(): Unit = {
+    imageProcessingArea.clearOutputPath()
+  }
 }

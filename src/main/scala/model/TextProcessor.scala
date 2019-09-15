@@ -39,18 +39,19 @@ object TextProcessor {
     * @return A tuple containing the first half of the sentence and the bottom half of the sentence
     */
   def cleaveSentence(sentence: String): (String, String) = {
-    // Separate each word and calculate the halfway point of the sentence
-    val listOfWords = sentence.split(' ')
-    val halfOfSentence = sentence.length / 2
+    if(sentence.contains("\\")) {
+      val halves = sentence.split("\\")
+      return (halves(0).trim, halves(1).trim)
+    }
 
-    // Next, we continue to take words until the characters we've accumulated (taking into account spaces) is just around
-    // half of the sentence. Because sometimes a large word will straddle that boundary, we use (str.length / 2) to calculate
-    // the cost of taking it, so that the top line isn't weighted to be shorter than the bottom
-    var wordsTakenSoFar = 0
-    val (firstHalf, secondHalf) = listOfWords.span { str =>
-      val underHalf = wordsTakenSoFar + (str.length / 2) <= halfOfSentence
-      wordsTakenSoFar += str.length + 1
-      underHalf
+    // We continue to take words until the number of characters we've accumulated (taking into account spaces) is over
+    // half of the sentence. Since we always want the top longer than the bottom, we move one element from the second half to the first
+    var runningLength = 0
+    val (firstHalf, secondHalf) =  sentence.split(' ').span { str =>
+      runningLength += str.length + 1
+      runningLength < sentence.length / 2
+    } match {
+      case (h, t) => (h ++ t.take(1), t.drop(1))
     }
 
     (firstHalf.mkString(" "), secondHalf.mkString(" "))

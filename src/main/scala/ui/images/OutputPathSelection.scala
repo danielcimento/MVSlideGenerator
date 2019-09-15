@@ -53,4 +53,8 @@ class OutputPathSelection(implicit stage: Stage, rc: RunConfig) extends HBox(10.
       outputPathField.setText(chosenFile.getAbsolutePath)
     }
   }
+
+  def clear(): Unit = {
+    outputPathField.setText("")
+  }
 }

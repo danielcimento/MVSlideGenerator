@@ -24,6 +24,7 @@ class FileDisplayPane(labelText: String, val parent: ApplicationScene, allowSpli
   def fontSize: Int = _fontSize.getValue
   private val _lines: ListProperty[String] = new SimpleListProperty[String]()
   def getLines: List[String] = _lines.get().asScala.toList
+  private var _lastOpenedFilename: Option[String] = None
 
   // When the font size is changes, we want to wait a bit, then render a new preview (to prevent stuttering renders)
   _fontSize.addListener((_, _, newVal) => {
@@ -79,7 +80,7 @@ class FileDisplayPane(labelText: String, val parent: ApplicationScene, allowSpli
       new ExtensionFilter("All Files", "*.*")
     )
     var lastDirectory = new File(rc.getString(LAST_OPENED_DIRECTORY))
-    while(!lastDirectory.isDirectory) {
+    while(lastDirectory.exists() && !lastDirectory.isDirectory) {
       lastDirectory = lastDirectory.getParentFile
     }
     if(lastDirectory != null) {
@@ -87,17 +88,24 @@ class FileDisplayPane(labelText: String, val parent: ApplicationScene, allowSpli
       if(lastDirectory.getAbsolutePath != rc.getString(LAST_OPENED_DIRECTORY)) {
         rc.updateProperty(LAST_OPENED_DIRECTORY, lastDirectory.getAbsolutePath)
       }
+    } else {
+      fc.setInitialDirectory(null)
     }
 
     val chosenFile = fc.showOpenDialog(stage)
     if(chosenFile != null) {
       tryWithResource(Source.fromFile(chosenFile, "UTF-8")) { textSource =>
-        fileContents.getItems.setAll(textSource.getLines().toList: _*)
+        fileContents.getItems.setAll(textSource.getLines().map(_.trim).filter(_.nonEmpty).toList: _*)
       }
       parent.tryLinkingScrolls()
       val maxFontSize = TextRenderer.getLargestFontSize(getLines.map(TextProcessor.partitionLinesAndReadings(_)._1), allowSplitting)
       fontSlider.updateMaxSize(maxFontSize)
       fontSlider.updateFont(maxFontSize)
+
+      if(_lastOpenedFilename.isDefined && !_lastOpenedFilename.contains(chosenFile.getName)) {
+        parent.clearOutputPath()
+      }
+      _lastOpenedFilename = Some(chosenFile.getName)
 
       if(chosenFile.isFile) {
         val pathToSave = chosenFile.getParent
