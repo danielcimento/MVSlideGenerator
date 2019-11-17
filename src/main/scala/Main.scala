@@ -17,6 +17,7 @@ import java.io.IOException
 import java.io.PrintWriter
 import java.io.StringWriter
 
+import javafx.scene.image.{Image, ImageView}
 import ui.error.ErrorController
 
 
@@ -30,6 +31,8 @@ object Main extends App with LazyLogging {
   }
 
   class MVSlideGenerator extends Application with LazyLogging {
+    val versionNumber = "1.0.0"
+
     // We use JavaFX application procedures, since we need to initialize the graphics context
     override def start(primaryStage: Stage): Unit = {
       Thread.setDefaultUncaughtExceptionHandler(MVSlideGenerator.showError)
@@ -39,9 +42,10 @@ object Main extends App with LazyLogging {
 
       val defaultScene: Scene = new Scene(new ApplicationScene, 1920, 1080)
       primaryStage.setScene(defaultScene)
-      primaryStage.setTitle("MV Slide Generator")
+      primaryStage.setTitle(s"MV Slide Generator v$versionNumber")
       primaryStage.setMaximized(true)
       primaryStage.setResizable(true)
+      primaryStage.getIcons.add(new Image(getClass.getClassLoader.getResourceAsStream("icon.png"), 256, 256, true, true))
       primaryStage.show()
 
       logger.info(s"Using RunConfig: ${rc.toString}")
