@@ -14,6 +14,7 @@ import model.{RunConfig, TextProcessor, TextRenderer}
 import ui.{ApplicationScene, Globals}
 import ui.Globals.tryWithResource
 import model.RunConfig.Keys._
+import ui.utils.StickyFileChooser
 
 import scala.collection.JavaConverters._
 import scala.io.Source
@@ -74,45 +75,22 @@ class FileDisplayPane(labelText: String, val parent: ApplicationScene, allowSpli
   getChildren.addAll(label, fileContents, toolRow)
 
   def fillTextAreaWithFileContents(): Unit = {
-    val fc = new FileChooser
-    fc.setTitle("Choose a lyric file.")
+    val fc = new StickyFileChooser(rc).withTitle("Choose a lyric file.")
     fc.getExtensionFilters.add(
       new ExtensionFilter("All Files", "*.*")
     )
-    var lastDirectory = new File(rc.getString(LAST_OPENED_DIRECTORY))
-    while(lastDirectory.exists() && !lastDirectory.isDirectory) {
-      lastDirectory = lastDirectory.getParentFile
-    }
-    if(lastDirectory != null) {
-      fc.setInitialDirectory(lastDirectory)
-      if(lastDirectory.getAbsolutePath != rc.getString(LAST_OPENED_DIRECTORY)) {
-        rc.updateProperty(LAST_OPENED_DIRECTORY, lastDirectory.getAbsolutePath)
-      }
-    } else {
-      fc.setInitialDirectory(null)
-    }
 
-    val chosenFile = fc.showOpenDialog(stage)
-    if(chosenFile != null) {
-      tryWithResource(Source.fromFile(chosenFile, "UTF-8")) { textSource =>
+    fc.showOpenDialog(stage) match {
+      case Some(file) =>
+        tryWithResource(Source.fromFile(file, "UTF-8")) { textSource =>
         fileContents.getItems.setAll(textSource.getLines().map(_.trim).filter(_.nonEmpty).toList: _*)
-      }
-      parent.tryLinkingScrolls()
-      val maxFontSize = TextRenderer.getLargestFontSize(getLines.map(TextProcessor.partitionLinesAndReadings(_)._1), allowSplitting)
-      fontSlider.updateMaxSize(maxFontSize)
-      fontSlider.updateFont(maxFontSize)
 
-      if(_lastOpenedFilename.isDefined && !_lastOpenedFilename.contains(chosenFile.getName)) {
-        parent.clearOutputPath()
-      }
-      _lastOpenedFilename = Some(chosenFile.getName)
-
-      if(chosenFile.isFile) {
-        val pathToSave = chosenFile.getParent
-        if(pathToSave != null) {
-          rc.updateProperty(LAST_OPENED_DIRECTORY, pathToSave)
         }
-      }
+        parent.tryLinkingScrolls()
+        val maxFontSize = TextRenderer.getLargestFontSize(getLines.map(TextProcessor.partitionLinesAndReadings(_)._1), allowSplitting)
+        fontSlider.updateMaxSize(maxFontSize)
+        fontSlider.updateFont(maxFontSize)
+      case None => ()
     }
   }
 

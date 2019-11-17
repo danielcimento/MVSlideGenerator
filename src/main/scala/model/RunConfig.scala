@@ -4,12 +4,14 @@ import java.io._
 import java.util.Properties
 
 import com.typesafe.scalalogging.LazyLogging
+import model.RunConfig.Keys.LAST_ACCESSED_FILE
+import ui.utils.LastAccessedFileProvider
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.util.Try
 
-case class RunConfig(properties: mutable.Map[String, String], propertiesFile: Option[File]) {
+case class RunConfig(properties: mutable.Map[String, String], propertiesFile: Option[File]) extends LastAccessedFileProvider {
   def updateProperty[A](setting: String, newValue: A): A = {
     properties.put(setting, newValue.toString)
     // Save the new property
@@ -54,6 +56,17 @@ case class RunConfig(properties: mutable.Map[String, String], propertiesFile: Op
       }
     }
   }
+
+  override def getLastAccessedFile: Option[File] = {
+    val lastOpenedFileName = getString(LAST_ACCESSED_FILE)
+    if (lastOpenedFileName.isEmpty) None else Some(new File(getString(LAST_ACCESSED_FILE)))
+  }
+
+  override def updateLastAccessedFile(file: File): Unit = {
+    if (file.getAbsolutePath != getString(LAST_ACCESSED_FILE)) {
+      updateProperty(LAST_ACCESSED_FILE, file.getAbsolutePath)
+    }
+  }
 }
 
 object RunConfig extends LazyLogging {
@@ -67,7 +80,7 @@ object RunConfig extends LazyLogging {
     val TRANSPARENT_STROKED = "transparentStroked"
     val WITH_PREVIEW_LINE = "includePreviewLine"
     val MIN_FONT_BEFORE_CLEAVE = "minFontBeforeCleave"
-    val LAST_OPENED_DIRECTORY = "lastOpenedDirectory"
+    val LAST_ACCESSED_FILE = "lastAccessedFile"
   }
 
   import Keys._
@@ -82,7 +95,7 @@ object RunConfig extends LazyLogging {
     // TODO: Experiment with this value
     MIN_FONT_BEFORE_CLEAVE -> 70,
     WITH_PREVIEW_LINE -> false,
-    LAST_OPENED_DIRECTORY -> ""
+    LAST_ACCESSED_FILE -> ""
   )
 
   def getUserConfig: RunConfig = {

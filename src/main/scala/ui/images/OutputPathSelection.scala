@@ -8,8 +8,8 @@ import javafx.scene.layout.{HBox, Priority}
 import javafx.scene.text.Font
 import javafx.stage.{DirectoryChooser, Stage}
 import model.RunConfig
-import model.RunConfig.Keys.LAST_OPENED_DIRECTORY
 import ui.Globals
+import ui.utils.StickyDirectoryChooser
 
 // A nice little encapsulated class that has a label, a text field, and a button which allows users to search for their desired directory
 class OutputPathSelection(implicit stage: Stage, rc: RunConfig) extends HBox(10.0) {
@@ -29,28 +29,11 @@ class OutputPathSelection(implicit stage: Stage, rc: RunConfig) extends HBox(10.
   getChildren.addAll(outputPathLabel, outputPathField, outputPathSelect)
 
   private def updateOutputPath(): Unit = {
-    val dc = new DirectoryChooser
-    dc.setTitle("Choose an Output Directory")
-    var lastDirectory = new File(rc.getString(LAST_OPENED_DIRECTORY))
-    while(!lastDirectory.isDirectory) {
-      lastDirectory = lastDirectory.getParentFile
-    }
-    if(lastDirectory != null) {
-      dc.setInitialDirectory(lastDirectory)
-      if(lastDirectory.getAbsolutePath != rc.getString(LAST_OPENED_DIRECTORY)) {
-        rc.updateProperty(LAST_OPENED_DIRECTORY, lastDirectory.getAbsolutePath)
-      }
-    }
+    val dc = new StickyDirectoryChooser(rc).withTitle("Choose an Output Directory")
 
-    val chosenFile = dc.showDialog(stage)
-
-    if(chosenFile != null) {
-      val pathToSave = chosenFile.getParent
-      if(pathToSave != null) {
-        rc.updateProperty(LAST_OPENED_DIRECTORY, pathToSave)
-      }
-
-      outputPathField.setText(chosenFile.getAbsolutePath)
+    dc.showDialog(stage) match {
+      case Some(file) => outputPathField.setText(file.getAbsolutePath)
+      case None => ()
     }
   }
 
