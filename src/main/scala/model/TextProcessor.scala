@@ -52,6 +52,8 @@ object TextProcessor {
           lineOfRawText = new StringBuilder
           currentDecorations = currentDecorations.filter(!_.equals(Italics))
         } else {
+          aggregatedList.append(DecoratedText(lineOfRawText.toString(), currentDecorations))
+          lineOfRawText = new StringBuilder
           currentDecorations = currentDecorations :+ Italics
         }
       case '_' if !escaped =>

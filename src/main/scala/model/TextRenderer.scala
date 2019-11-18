@@ -78,8 +78,10 @@ object TextRenderer extends LazyLogging {
   }
 
   private def createDecoratedText(decoratedText: DecoratedText, fontSize: Int)(implicit rc: RunConfig): Text = {
+    val fontPosture = if (decoratedText.decorations.contains(Italics)) FontPosture.ITALIC else FontPosture.REGULAR
+
     val text = new Text(decoratedText.rawText)
-    text.setFont(Font.font(rc.getString(FONT_FAMILY), FontWeight.BOLD, fontSize))
+    text.setFont(Font.font(rc.getString(FONT_FAMILY), FontWeight.BOLD, fontPosture, fontSize))
     text.setFill(Color.WHITE)
     // TODO: Add decorations
     text
