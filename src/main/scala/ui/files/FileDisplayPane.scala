@@ -28,7 +28,6 @@ class FileDisplayPane(labelText: String, val parent: ApplicationScene, allowSpli
 
   private val _lines: ListProperty[String] = new SimpleListProperty[String]()
   def getLines: List[String] = _lines.get().asScala.toList
-  private var _lastOpenedFilename: Option[String] = None
 
   // When the font size is changed, we want to wait a bit, then render a new preview (to prevent stuttering renders)
   _fontSize.addListener((_, _, newVal) => {
