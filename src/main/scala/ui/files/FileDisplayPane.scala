@@ -78,7 +78,7 @@ class FileDisplayPane(labelText: String, val parent: ApplicationScene, allowSpli
     fc.showOpenDialog(stage) match {
       case Some(file) =>
         tryWithResource(Source.fromFile(file, "UTF-8")) { textSource =>
-          fileContents.getItems.setAll(textSource.getLines().map(_.trim).filter(_.nonEmpty).toList: _*)
+          fileContents.getItems.setAll(textSource.getLines().map(_.trim).toList: _*)
         }
         parent.tryLinkingScrolls()
         if(!_fontSpinner.isVisible) {

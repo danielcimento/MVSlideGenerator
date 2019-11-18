@@ -17,7 +17,7 @@ import scala.language.postfixOps
 object GraphicsRenderer extends GraphicsHelpers {
   private val bigCharacter = "国"
 
-  def createAndDrawCanvas(topText: HeightAwareTextFlow, bottomText: Image, previewText: Option[Image])(implicit rc: RunConfig): Image = {
+  def createAndDrawCanvas(topText: HeightAwareTextFlow, bottomText: Image)(implicit rc: RunConfig): Image = {
     // Unpack run config
     val (xDimension, yDimension) = (rc.getInt(RESOLUTION_WIDTH), rc.getInt(RESOLUTION_HEIGHT))
     val thirdOfHeight = yDimension / 3
@@ -32,10 +32,7 @@ object GraphicsRenderer extends GraphicsHelpers {
     background.setHeight(yDimension)
     background.setFill(Color.BLACK)
 
-    val bottomImage: ImageView = previewText match {
-      case None => new ImageView(bottomText)
-      case Some(img) => new ImageView(stackImagesWithSpacing(List(bottomText, img), rc.getInt(FURIGANA_SPACING)))
-    }
+    val bottomImage: ImageView =  new ImageView(bottomText)
 
     bottomImage.setX((xDimension - bottomText.getWidth) / 2)
     bottomImage.setY(yDimension - bottomText.getHeight - rc.getInt(LINE_SPACING))
@@ -237,7 +234,10 @@ object GraphicsRenderer extends GraphicsHelpers {
     val previewImage = rc.getBool(WITH_PREVIEW_LINE).option(TextRenderer.convertJapaneseLineToImage(japaneseLinePreview, jpFontSize, isPreview = true))
     val japaneseImage = TextRenderer.convertJapaneseLineToImage(japaneseLine, jpFontSize)
     val englishImage = TextRenderer.renderEnglishLine(englishLine, engFontSize)
-    createAndDrawCanvas(englishImage, japaneseImage, previewImage)
+    previewImage match {
+      case Some(preview) => createAndDrawCanvas(englishImage, stackImagesWithSpacing(List(japaneseImage, preview), rc.getInt(FURIGANA_SPACING)))
+      case None => createAndDrawCanvas(englishImage, japaneseImage)
+    }
 //    paintText(englishImage, japaneseImage, previewImage, rc)
   }
 
