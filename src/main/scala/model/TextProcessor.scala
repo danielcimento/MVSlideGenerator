@@ -46,6 +46,11 @@ object TextProcessor {
     var currentDecorations: List[TextDecoration] = List()
 
     line.foreach({
+      case 'n' if escaped =>
+        aggregatedList.append(DecoratedText(lineOfRawText.toString(), currentDecorations))
+        aggregatedList.append(LineBreak)
+        lineOfRawText = new StringBuilder
+        escaped = false
       case '*' if !escaped =>
         if (currentDecorations.contains(Italics)) {
           aggregatedList.append(DecoratedText(lineOfRawText.toString(), currentDecorations))

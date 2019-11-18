@@ -32,10 +32,16 @@ object TextRenderer extends LazyLogging {
     val textFlow = new HeightAwareTextFlow()
 
     var totalWidth = 0.0
-    lineWithDecorations.foreach(fragment => {
-      val textSegment = createDecoratedText(fragment, fontSize)
-      textFlow.addChild(textSegment)
-      totalWidth += textSegment.getLayoutBounds.getWidth
+    lineWithDecorations.foreach({
+      case LineBreak =>
+        totalWidth = 0.0
+        val textSegment = LineBreak.createDecoratedText(fontSize)
+        textFlow.getChildren.add(textSegment)
+        textFlow.lineCount += 1
+      case fragment =>
+        val textSegment = fragment.createDecoratedText(fontSize)
+        textFlow.addChild(textSegment)
+        totalWidth += textSegment.getLayoutBounds.getWidth
     })
 
     println(totalWidth)
@@ -44,7 +50,7 @@ object TextRenderer extends LazyLogging {
     if (totalWidth > availableScreenWidth) {
       // TODO: tidy
       textFlow.setMaxWidth(maxWidthAfterSplittingLine(englishLine, Font.font(rc.getString(FONT_FAMILY), FontWeight.BOLD, fontSize)))
-      textFlow.lineCount = 2
+      textFlow.lineCount += 1
     } else {
       textFlow.setMaxWidth(totalWidth)
     }
@@ -75,15 +81,5 @@ object TextRenderer extends LazyLogging {
     topHalf.setFont(font)
     bottomHalf.setFont(font)
     Math.max(topHalf.getLayoutBounds.getWidth, bottomHalf.getLayoutBounds.getWidth)
-  }
-
-  private def createDecoratedText(decoratedText: DecoratedText, fontSize: Int)(implicit rc: RunConfig): Text = {
-    val fontPosture = if (decoratedText.decorations.contains(Italics)) FontPosture.ITALIC else FontPosture.REGULAR
-
-    val text = new Text(decoratedText.rawText)
-    text.setFont(Font.font(rc.getString(FONT_FAMILY), FontWeight.BOLD, fontPosture, fontSize))
-    text.setFill(Color.WHITE)
-    // TODO: Add decorations
-    text
   }
 }

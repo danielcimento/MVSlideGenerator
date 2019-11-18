@@ -24,6 +24,7 @@ object GraphicsRenderer extends GraphicsHelpers {
 
     topText.setLayoutX((xDimension - topText.getMaxWidth) / 2)
     val textHeight = topText.lineHeight + (if (topText.lineCount > 1) topText.getLineSpacing + topText.lineHeight else 0)
+    println(s"Line height: ${topText.lineHeight}, Line count: ${topText.lineCount}, text height: $textHeight")
     topText.setLayoutY((thirdOfHeight - textHeight) / 2)
 
     val canvas = new Group()
