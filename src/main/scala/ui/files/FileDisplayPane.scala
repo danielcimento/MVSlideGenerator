@@ -2,7 +2,7 @@ package ui.files
 
 import java.io.File
 
-import javafx.beans.property.{IntegerProperty, ListProperty, SimpleIntegerProperty, SimpleListProperty}
+import javafx.beans.property._
 import javafx.concurrent.Task
 import javafx.geometry.{Insets, Pos}
 import javafx.scene.control._
@@ -21,13 +21,16 @@ import scala.io.Source
 
 class FileDisplayPane(labelText: String, val parent: ApplicationScene, allowSplitting: Boolean)(implicit stage: Stage, rc: RunConfig) extends VBox(10.0) {
   // This is the primary property that needs to be visible to the parent scene
-  private val _fontSize: IntegerProperty = new SimpleIntegerProperty(0)
+  val _fontSpinner = new FontSpinner
+
+  private val _fontSize: ReadOnlyObjectProperty[Int] = _fontSpinner.fontSize
   def fontSize: Int = _fontSize.getValue
+
   private val _lines: ListProperty[String] = new SimpleListProperty[String]()
   def getLines: List[String] = _lines.get().asScala.toList
   private var _lastOpenedFilename: Option[String] = None
 
-  // When the font size is changes, we want to wait a bit, then render a new preview (to prevent stuttering renders)
+  // When the font size is changed, we want to wait a bit, then render a new preview (to prevent stuttering renders)
   _fontSize.addListener((_, _, newVal) => {
     // First, whenever our font size changes, start a new task that just waits .5 seconds in the background
     val waitAndUpdateImage = new Task[Unit]() {
@@ -57,9 +60,6 @@ class FileDisplayPane(labelText: String, val parent: ApplicationScene, allowSpli
   val fileContents: FileContentArea = new FileContentArea(parent.setPreviewImage)
   _lines.bind(fileContents.itemsProperty())
 
-  val fontSlider: FontSlider = new FontSlider
-  _fontSize.bind(fontSlider.fontValue)
-
   // The row below the list of lines which allows user interaction
   val toolRow: HBox = new HBox(10.0) {
     val button: Button = new Button("Load File") {
@@ -67,10 +67,9 @@ class FileDisplayPane(labelText: String, val parent: ApplicationScene, allowSpli
       setFont(Font.font(Globals.uiFont))
     }
 
-    setAlignment(Pos.CENTER)
-    getChildren.addAll(fontSlider, button)
+    setAlignment(Pos.CENTER_RIGHT)
+    getChildren.addAll(_fontSpinner, button)
   }
-  HBox.setHgrow(fontSlider, Priority.ALWAYS)
 
   getChildren.addAll(label, fileContents, toolRow)
 
@@ -87,17 +86,15 @@ class FileDisplayPane(labelText: String, val parent: ApplicationScene, allowSpli
 
         }
         parent.tryLinkingScrolls()
-        val maxFontSize = TextRenderer.getLargestFontSize(getLines.map(TextProcessor.partitionLinesAndReadings(_)._1), allowSplitting)
-        fontSlider.updateMaxSize(maxFontSize)
-        fontSlider.updateFont(maxFontSize)
+        if(!_fontSpinner.isVisible) {
+          _fontSpinner.setVisible(true)
+        }
       case None => ()
     }
   }
 
   def reset(): Unit = {
     fileContents.getItems.clear()
-    fontSlider.updateMaxSize(0)
-    fontSlider.updateFont(0)
   }
 
   def getNthLine(n: Int): Option[String] = {
