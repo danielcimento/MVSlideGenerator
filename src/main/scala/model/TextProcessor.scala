@@ -1,5 +1,9 @@
 package model
 
+import model.DecoratedText.DecoratedLine
+
+import scala.collection.mutable.ArrayBuffer
+
 object TextProcessor {
   /**
     * This function takes in a string of Japanese text (with Kanji + reading pairs written as [Kanji|Reading]) and
@@ -33,30 +37,44 @@ object TextProcessor {
     (lineWithoutReadings, partitionedText)
   }
 
-  /**
-    * Divides a sentence as close to half as possible while respecting word boundaries
-    * @param sentence An English or Japanese sentence, separated by spaces
-    * @return A tuple containing the first half of the sentence and the bottom half of the sentence
-    */
-  def cleaveSentence(sentence: String): (String, String) = {
-    if(sentence.contains('\\')) {
-      val halves = sentence.split('\\')
-      return (halves(0).trim, halves(1).trim)
+  // TODO: Add unit tests
+  def decorateLineOfText(line: String): DecoratedLine = {
+    val aggregatedList = new ArrayBuffer[DecoratedText]
+
+    var escaped = false
+    var lineOfRawText = new StringBuilder
+    var currentDecorations: List[TextDecoration] = List()
+
+    line.foreach({
+      case '*' if !escaped =>
+        if (currentDecorations.contains(Italics)) {
+          aggregatedList.append(DecoratedText(lineOfRawText.toString(), currentDecorations))
+          lineOfRawText = new StringBuilder
+          currentDecorations = currentDecorations.filter(!_.equals(Italics))
+        } else {
+          currentDecorations = currentDecorations :+ Italics
+        }
+      case '_' if !escaped =>
+        if (currentDecorations.contains(Underlined)) {
+          aggregatedList.append(DecoratedText(lineOfRawText.toString(), currentDecorations))
+          lineOfRawText = new StringBuilder
+          currentDecorations = currentDecorations.filter(!_.equals(Underlined))
+        } else {
+          currentDecorations = currentDecorations :+ Underlined
+        }
+      case '\\' if !escaped =>
+        escaped = true
+      case c =>
+        lineOfRawText.append(c)
+        escaped = false
+    })
+
+    if (lineOfRawText.nonEmpty) {
+      aggregatedList.append(DecoratedText(lineOfRawText.toString(), currentDecorations))
     }
 
-    // We continue to take words until the number of characters we've accumulated (taking into account spaces) is over
-    // half of the sentence. Since we always want the top longer than the bottom, we move one element from the second half to the first
-    var runningLength = 0
-    val (firstHalf, secondHalf) =  sentence.split(' ').span { str =>
-      runningLength += str.length + 1
-      runningLength < sentence.length / 2
-    } match {
-      case (h, t) => (h ++ t.take(1), t.drop(1))
-    }
-
-    (firstHalf.mkString(" "), secondHalf.mkString(" "))
+    aggregatedList.toList
   }
-
 }
 
 case class TextWithReading(baseText: String, reading: String) {

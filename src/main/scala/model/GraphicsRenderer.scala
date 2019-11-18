@@ -1,61 +1,53 @@
 package model
 
-import javafx.scene.SnapshotParameters
+import javafx.scene.{Group, SnapshotParameters}
 import javafx.scene.canvas.Canvas
-import javafx.scene.image.Image
+import javafx.scene.image.{Image, ImageView}
 import javafx.scene.paint.Color
-import javafx.scene.text.{Font, FontWeight, Text, TextAlignment}
+import javafx.scene.text._
 import RunConfig.Keys._
 import com.typesafe.scalalogging.LazyLogging
 import Globals.RichBoolean
+import javafx.geometry.Pos
+import javafx.scene.layout.{HBox, StackPane}
+import javafx.scene.shape.Rectangle
 
 import scala.language.postfixOps
 
 object GraphicsRenderer extends GraphicsHelpers {
   private val bigCharacter = "国"
 
-  // determines whether an english sentence can fit entirely on one line or needs to be broken up
-  def canFitOnOneLine(line: String, fontSize: Int, width: Int, fontFamily: String): Boolean = {
-    getTextDimensions(line, Font.font(fontFamily, FontWeight.BOLD, fontSize))._1 <= width
-  }
+  def createAndDrawCanvas(topText: HeightAwareTextFlow, bottomText: Image, previewText: Option[Image])(implicit rc: RunConfig): Image = {
+    // Unpack run config
+    val (xDimension, yDimension) = (rc.getInt(RESOLUTION_WIDTH), rc.getInt(RESOLUTION_HEIGHT))
+    val thirdOfHeight = yDimension / 3
 
-  private def largestIntSatisfyingPredicate(pred: Int => Boolean): Int = {
-    var workingInt = 1
+    topText.setLayoutX((xDimension - topText.getMaxWidth) / 2)
+    val textHeight = topText.lineHeight + (if (topText.lineCount > 1) topText.getLineSpacing + topText.lineHeight else 0)
+    topText.setLayoutY((thirdOfHeight - textHeight) / 2)
 
-    while(pred(workingInt)) {
-      workingInt *= 2
+    val canvas = new Group()
+    val background: Rectangle = new Rectangle()
+    background.setWidth(xDimension)
+    background.setHeight(yDimension)
+    background.setFill(Color.BLACK)
+
+    val bottomImage: ImageView = previewText match {
+      case None => new ImageView(bottomText)
+      case Some(img) => new ImageView(stackImagesWithSpacing(List(bottomText, img), rc.getInt(FURIGANA_SPACING)))
     }
 
-    // The largest possible number is in this range
-    val possibleRange = (workingInt / 2 to workingInt).reverse
+    bottomImage.setX((xDimension - bottomText.getWidth) / 2)
+    bottomImage.setY(yDimension - bottomText.getHeight - rc.getInt(LINE_SPACING))
 
-    possibleRange.find(pred) match {
-      case Some(i) => i
-      case _ => 0
-    }
-  }
+    canvas.getChildren.addAll(background, topText, bottomImage)
+    canvas.snapshot(new SnapshotParameters, null)
+    /*
 
-  // Gets the largest font size within a certain range that can comfortably fit in the specified area
-  def getFontSizeForLine(
-    line: String,
-    availableWidth: Int,
-    fontFamily: String,
-    twoLines: Boolean = false
-  ): Int = {
+    gc.drawImage(bottomImage, bottomXPosition, bottomYPosition)
 
-    if(line.isEmpty) {
-      // This usually only becomes relevant in the case of failed splits. It's mostly here to prevent weird interactions, but won't often see much use
-      Int.MaxValue
-    } else if(twoLines) {
-      val (firstLine, secondLine) = TextProcessor.cleaveSentence(line)
-
-      Math.min(
-        getFontSizeForLine(firstLine, availableWidth, fontFamily),
-        getFontSizeForLine(secondLine, availableWidth, fontFamily)
-      )
-    } else {
-      largestIntSatisfyingPredicate(canFitOnOneLine(line, _, availableWidth, fontFamily))
-    }
+    takePictureOfCanvas
+    */
   }
 
   def renderFuriganaFragment(
@@ -244,8 +236,9 @@ object GraphicsRenderer extends GraphicsHelpers {
     // Using the RichBoolean implicit in our globals
     val previewImage = rc.getBool(WITH_PREVIEW_LINE).option(TextRenderer.convertJapaneseLineToImage(japaneseLinePreview, jpFontSize, isPreview = true))
     val japaneseImage = TextRenderer.convertJapaneseLineToImage(japaneseLine, jpFontSize)
-    val englishImage = TextRenderer.convertEnglishLineToImage(englishLine, engFontSize)
-    paintText(englishImage, japaneseImage, previewImage, rc)
+    val englishImage = TextRenderer.renderEnglishLine(englishLine, engFontSize)
+    createAndDrawCanvas(englishImage, japaneseImage, previewImage)
+//    paintText(englishImage, japaneseImage, previewImage, rc)
   }
 
   def createAllImages(japaneseLines: List[String], englishLines: List[String], jpFontSize: Int, engFontSize: Int)(implicit rc: RunConfig): List[Image] = {

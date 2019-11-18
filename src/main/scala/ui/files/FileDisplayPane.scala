@@ -1,19 +1,16 @@
 package ui.files
 
-import java.io.File
-
 import javafx.beans.property._
 import javafx.concurrent.Task
 import javafx.geometry.{Insets, Pos}
 import javafx.scene.control._
-import javafx.scene.layout.{HBox, Priority, VBox}
+import javafx.scene.layout.{HBox, VBox}
 import javafx.scene.text.Font
 import javafx.stage.FileChooser.ExtensionFilter
-import javafx.stage.{FileChooser, Stage}
-import model.{RunConfig, TextProcessor, TextRenderer}
+import javafx.stage.Stage
+import model.RunConfig
 import ui.{ApplicationScene, Globals}
 import ui.Globals.tryWithResource
-import model.RunConfig.Keys._
 import ui.utils.StickyFileChooser
 
 import scala.collection.JavaConverters._
@@ -81,8 +78,7 @@ class FileDisplayPane(labelText: String, val parent: ApplicationScene, allowSpli
     fc.showOpenDialog(stage) match {
       case Some(file) =>
         tryWithResource(Source.fromFile(file, "UTF-8")) { textSource =>
-        fileContents.getItems.setAll(textSource.getLines().map(_.trim).filter(_.nonEmpty).toList: _*)
-
+          fileContents.getItems.setAll(textSource.getLines().map(_.trim).filter(_.nonEmpty).toList: _*)
         }
         parent.tryLinkingScrolls()
         if(!_fontSpinner.isVisible) {

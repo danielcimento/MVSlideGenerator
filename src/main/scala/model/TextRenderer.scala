@@ -1,18 +1,14 @@
 package model
 
 import com.typesafe.scalalogging.LazyLogging
+import javafx.scene.SnapshotParameters
 import javafx.scene.image.Image
-import javafx.scene.text.{Font, FontWeight, Text, TextFlow}
+import javafx.scene.paint.Color
+import javafx.scene.text._
 import model.DecoratedText.DecoratedLine
 import model.RunConfig.Keys._
 
 object TextRenderer extends LazyLogging {
-  private def createDecoratedText(decoratedText: DecoratedText, fontSize: Int)(implicit rc: RunConfig): Text = {
-    val text = new Text(decoratedText.rawText)
-    text.setFont(Font.font(rc.getString(FONT_FAMILY), FontWeight.BOLD, fontSize))
-    // TODO: Add decorations
-    text
-  }
 
   def convertJapaneseLineToImage(japaneseLine: String, fontSize: Int, isPreview: Boolean = false)(implicit rc: RunConfig): Image = {
     // First, we divide each Japanese line into a (line, readings) pair,
@@ -30,15 +26,62 @@ object TextRenderer extends LazyLogging {
     }
   }
 
-  def convertEnglishLineToImage(englishLine: String, fontSize: Int)(implicit rc: RunConfig): Image = {
-    // First, we see if any line is big enough to warrant using two lines
+  def renderEnglishLine(englishLine: String, fontSize: Int)(implicit rc: RunConfig): HeightAwareTextFlow = {
+    val lineWithDecorations = TextProcessor.decorateLineOfText(englishLine)
     val availableScreenWidth = rc.getInt(RESOLUTION_WIDTH) - 2 * rc.getInt(HORIZONTAL_PADDING)
+    val textFlow = new HeightAwareTextFlow()
 
-    if(!GraphicsRenderer.canFitOnOneLine(englishLine, fontSize, availableScreenWidth, rc.getString(FONT_FAMILY)) || englishLine.contains("\\")) {
-      val (topLine, botLine) = TextProcessor.cleaveSentence(englishLine)
-      GraphicsRenderer.renderEnglishTextLine(topLine, fontSize, rc.getString(FONT_FAMILY), rc.getInt(LINE_SPACING), rc.getBool(TRANSPARENT_STROKED), Some(botLine))
+    var totalWidth = 0.0
+    lineWithDecorations.foreach(fragment => {
+      val textSegment = createDecoratedText(fragment, fontSize)
+      textFlow.addChild(textSegment)
+      totalWidth += textSegment.getLayoutBounds.getWidth
+    })
+
+    println(totalWidth)
+    textFlow.setLineSpacing(rc.getInt(LINE_SPACING))
+
+    if (totalWidth > availableScreenWidth) {
+      // TODO: tidy
+      textFlow.setMaxWidth(maxWidthAfterSplittingLine(englishLine, Font.font(rc.getString(FONT_FAMILY), FontWeight.BOLD, fontSize)))
+      textFlow.lineCount = 2
     } else {
-      GraphicsRenderer.renderEnglishTextLine(englishLine, fontSize, rc.getString(FONT_FAMILY), rc.getInt(LINE_SPACING), rc.getBool(TRANSPARENT_STROKED))
+      textFlow.setMaxWidth(totalWidth)
     }
+
+    textFlow.setTextAlignment(TextAlignment.CENTER)
+    textFlow
+  }
+
+  // Figure out how long the top line will be
+  private def maxWidthAfterSplittingLine(line: String, font: Font): Double = {
+    // We continue to take words until the number of characters we've accumulated (taking into account spaces) is over
+    // half of the sentence. Since we always want the top longer than the bottom, we move one element from the second half to the first
+    val fullSentence = new Text(line)
+    fullSentence.setFont(font)
+
+    var runningLength = 0.0
+    val (firstHalf, secondHalf) = line.split(' ').span { str =>
+      val txt = new Text(str + " ")
+      txt.setFont(font)
+      runningLength += txt.getLayoutBounds.getWidth
+      runningLength < fullSentence.getLayoutBounds.getWidth / 2
+    } match {
+      case (h, t) => (h ++ t.take(1), t.drop(1))
+    }
+
+    val topHalf = new Text(firstHalf.reduce(_ + " " + _))
+    val bottomHalf = new Text(secondHalf.reduce(_ + " " + _))
+    topHalf.setFont(font)
+    bottomHalf.setFont(font)
+    Math.max(topHalf.getLayoutBounds.getWidth, bottomHalf.getLayoutBounds.getWidth)
+  }
+
+  private def createDecoratedText(decoratedText: DecoratedText, fontSize: Int)(implicit rc: RunConfig): Text = {
+    val text = new Text(decoratedText.rawText)
+    text.setFont(Font.font(rc.getString(FONT_FAMILY), FontWeight.BOLD, fontSize))
+    text.setFill(Color.WHITE)
+    // TODO: Add decorations
+    text
   }
 }
