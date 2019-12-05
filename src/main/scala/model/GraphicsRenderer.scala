@@ -17,10 +17,14 @@ import scala.language.postfixOps
 object GraphicsRenderer extends GraphicsHelpers {
   private val bigCharacter = "国"
 
-  def createAndDrawCanvas(topText: HeightAwareTextFlow, bottomText: Image)(implicit rc: RunConfig): Image = {
+  def createAndDrawCanvas(topText: RichTextFlow, bottomText: Image)(implicit rc: RunConfig): Image = {
     // Unpack run config
     val (xDimension, yDimension) = (rc.getInt(RESOLUTION_WIDTH), rc.getInt(RESOLUTION_HEIGHT))
     val thirdOfHeight = yDimension / 3
+
+    if (topText.getMaxWidth == -1) {
+      topText.setMaxWidth(topText.maximumLineWidth)
+    }
 
     topText.setLayoutX((xDimension - topText.getMaxWidth) / 2)
     val textHeight = topText.lineHeight + (if (topText.lineCount > 1) topText.getLineSpacing + topText.lineHeight else 0)

@@ -26,33 +26,27 @@ object TextRenderer extends LazyLogging {
     }
   }
 
-  def renderEnglishLine(englishLine: String, fontSize: Int)(implicit rc: RunConfig): HeightAwareTextFlow = {
+  def renderEnglishLine(englishLine: String, fontSize: Int)(implicit rc: RunConfig): RichTextFlow = {
     val lineWithDecorations = TextProcessor.decorateLineOfText(englishLine)
     val availableScreenWidth = rc.getInt(RESOLUTION_WIDTH) - 2 * rc.getInt(HORIZONTAL_PADDING)
-    val textFlow = new HeightAwareTextFlow()
+    val textFlow = new RichTextFlow()
 
-    var totalWidth = 0.0
     lineWithDecorations.foreach({
       case LineBreak =>
-        totalWidth = 0.0
         val textSegment = LineBreak.createDecoratedText(fontSize)
         textFlow.getChildren.add(textSegment)
         textFlow.lineCount += 1
       case fragment =>
         val textSegment = fragment.createDecoratedText(fontSize)
         textFlow.addChild(textSegment)
-        totalWidth += textSegment.getLayoutBounds.getWidth
     })
 
-    println(totalWidth)
     textFlow.setLineSpacing(rc.getInt(LINE_SPACING))
 
-    if (totalWidth > availableScreenWidth) {
-      // TODO: tidy
+    if (textFlow.maximumLineWidth > availableScreenWidth) {
+      // TODO: Improve to be more accurate
       textFlow.setMaxWidth(maxWidthAfterSplittingLine(englishLine, Font.font(rc.getString(FONT_FAMILY), FontWeight.BOLD, fontSize)))
       textFlow.lineCount += 1
-    } else {
-      textFlow.setMaxWidth(totalWidth)
     }
 
     textFlow.setTextAlignment(TextAlignment.CENTER)
