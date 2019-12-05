@@ -31,16 +31,9 @@ object TextRenderer extends LazyLogging {
     val availableScreenWidth = rc.getInt(RESOLUTION_WIDTH) - 2 * rc.getInt(HORIZONTAL_PADDING)
     val textFlow = new RichTextFlow()
 
-    lineWithDecorations.foreach({
-      case LineBreak =>
-        val textSegment = LineBreak.createDecoratedText(fontSize)
-        textFlow.getChildren.add(textSegment)
-        textFlow.lineCount += 1
-      case fragment =>
-        val textSegment = fragment.createDecoratedText(fontSize)
-        textFlow.addChild(textSegment)
-    })
+    lineWithDecorations.foreach(fragment => textFlow.addChild(fragment.createDecoratedText(fontSize)))
 
+    textFlow.lineCount += lineWithDecorations.count(LineBreak.equals)
     textFlow.setLineSpacing(rc.getInt(LINE_SPACING))
 
     if (textFlow.maximumLineWidth > availableScreenWidth) {
